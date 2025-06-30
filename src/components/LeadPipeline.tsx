@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +16,11 @@ import {
   Phone,
   ExternalLink,
   MoreHorizontal,
-  Clock
+  Clock,
+  Bot,
+  Search
 } from "lucide-react";
+import { ProspectDiscovery } from "./ProspectDiscovery";
 
 const statusConfig = {
   researched: { label: "New Prospect", color: "bg-blue-500", textColor: "text-blue-700" },
@@ -28,9 +30,13 @@ const statusConfig = {
   meeting_booked: { label: "Meeting Booked", color: "bg-indigo-500", textColor: "text-indigo-700" }
 };
 
-export const LeadPipeline = () => {
+interface LeadPipelineProps {
+  user?: any;
+}
+
+export const LeadPipeline = ({ user }: LeadPipelineProps) => {
   const [selectedLead, setSelectedLead] = useState<any>(null);
-  const [activeView, setActiveView] = useState("pipeline");
+  const [activeView, setActiveView] = useState("discovery");
 
   // Fetch real prospects data
   const { data: prospects, isLoading } = useQuery({
@@ -129,26 +135,12 @@ export const LeadPipeline = () => {
     );
   }
 
-  if (!prospects || prospects.length === 0) {
-    return (
-      <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-        <CardContent className="p-6">
-          <div className="text-center">
-            <h3 className="text-lg font-medium text-slate-900 mb-2">No Prospects Yet</h3>
-            <p className="text-slate-600 mb-4">Start by connecting your LinkedIn account and importing prospects.</p>
-            <Button>Import Prospects</Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Lead Pipeline</h2>
-          <p className="text-slate-600">Track and manage your HR prospect relationships</p>
+          <p className="text-slate-600">AI-powered prospect discovery and pipeline management</p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" size="sm">
@@ -162,157 +154,181 @@ export const LeadPipeline = () => {
 
       <Tabs value={activeView} onValueChange={setActiveView}>
         <TabsList>
+          <TabsTrigger value="discovery" className="flex items-center space-x-2">
+            <Bot className="w-4 h-4" />
+            <span>AI Discovery</span>
+          </TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline View</TabsTrigger>
           <TabsTrigger value="list">List View</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="discovery" className="space-y-6">
+          <ProspectDiscovery user={user} />
+        </TabsContent>
+
         <TabsContent value="pipeline" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Pipeline Stages */}
-            <div className="lg:col-span-2 space-y-4">
-              {Object.entries(statusConfig).map(([status, config]) => {
-                const leadsInStage = prospects.filter(lead => lead.status === status);
-                return (
-                  <Card key={status} className="bg-white/60 backdrop-blur-sm border-slate-200">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg flex items-center space-x-2">
-                          <div className={`w-3 h-3 rounded-full ${config.color}`}></div>
-                          <span>{config.label}</span>
-                        </CardTitle>
-                        <Badge variant="secondary">{leadsInStage.length}</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {leadsInStage.map(lead => (
-                          <div 
-                            key={lead.id}
-                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                              selectedLead?.id === lead.id 
-                                ? 'border-blue-500 bg-blue-50' 
-                                : 'border-slate-200 bg-white hover:border-slate-300'
-                            }`}
-                            onClick={() => setSelectedLead(lead)}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <Avatar className="w-10 h-10">
-                                <AvatarFallback>
-                                  {lead.first_name?.[0]}{lead.last_name?.[0]}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <p className="font-medium text-slate-900">
-                                  {lead.first_name} {lead.last_name}
-                                </p>
-                                <p className="text-sm text-slate-600">{lead.title}</p>
-                                <p className="text-sm text-slate-500">{lead.companies?.name}</p>
+          {(!prospects || prospects.length === 0) ? (
+            <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <Bot className="w-16 h-16 mx-auto text-slate-400 mb-4" />
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">No Prospects Yet</h3>
+                  <p className="text-slate-600 mb-4">Use AI Discovery to automatically find and qualify HR prospects.</p>
+                  <Button onClick={() => setActiveView("discovery")} className="flex items-center space-x-2">
+                    <Search className="w-4 h-4" />
+                    <span>Start AI Discovery</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Pipeline Stages */}
+              <div className="lg:col-span-2 space-y-4">
+                {Object.entries(statusConfig).map(([status, config]) => {
+                  const leadsInStage = prospects.filter(lead => lead.status === status);
+                  return (
+                    <Card key={status} className="bg-white/60 backdrop-blur-sm border-slate-200">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg flex items-center space-x-2">
+                            <div className={`w-3 h-3 rounded-full ${config.color}`}></div>
+                            <span>{config.label}</span>
+                          </CardTitle>
+                          <Badge variant="secondary">{leadsInStage.length}</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {leadsInStage.map(lead => (
+                            <div 
+                              key={lead.id}
+                              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                                selectedLead?.id === lead.id 
+                                  ? 'border-blue-500 bg-blue-50' 
+                                  : 'border-slate-200 bg-white hover:border-slate-300'
+                              }`}
+                              onClick={() => setSelectedLead(lead)}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <Avatar className="w-10 h-10">
+                                  <AvatarFallback>
+                                    {lead.first_name?.[0]}{lead.last_name?.[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <p className="font-medium text-slate-900">
+                                    {lead.first_name} {lead.last_name}
+                                  </p>
+                                  <p className="text-sm text-slate-600">{lead.title}</p>
+                                  <p className="text-sm text-slate-500">{lead.companies?.name}</p>
+                                </div>
+                              </div>
+                              <div className="mt-3 flex items-center justify-between">
+                                <span className="text-xs text-slate-500">
+                                  {lead.last_interaction_at 
+                                    ? new Date(lead.last_interaction_at).toLocaleDateString()
+                                    : 'No interactions'
+                                  }
+                                </span>
+                                <div className={`text-xs font-medium ${getEngagementColor(getEngagementScore(lead))}`}>
+                                  {getEngagementScore(lead)}% engaged
+                                </div>
                               </div>
                             </div>
-                            <div className="mt-3 flex items-center justify-between">
-                              <span className="text-xs text-slate-500">
-                                {lead.last_interaction_at 
-                                  ? new Date(lead.last_interaction_at).toLocaleDateString()
-                                  : 'No interactions'
-                                }
-                              </span>
-                              <div className={`text-xs font-medium ${getEngagementColor(getEngagementScore(lead))}`}>
-                                {getEngagementScore(lead)}% engaged
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
 
-            {/* Lead Details */}
-            {selectedLead && (
-              <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Lead Details</span>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-center">
-                    <Avatar className="w-16 h-16 mx-auto mb-3">
-                      <AvatarFallback className="text-lg">
-                        {selectedLead.first_name?.[0]}{selectedLead.last_name?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <h3 className="font-bold text-slate-900">
-                      {selectedLead.first_name} {selectedLead.last_name}
-                    </h3>
-                    <p className="text-slate-600">{selectedLead.title}</p>
-                    <p className="text-slate-500">{selectedLead.companies?.name}</p>
-                    {getStatusBadge(selectedLead.status)}
-                  </div>
+              {/* Lead Details */}
+              {selectedLead && (
+                <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Lead Details</span>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="text-center">
+                      <Avatar className="w-16 h-16 mx-auto mb-3">
+                        <AvatarFallback className="text-lg">
+                          {selectedLead.first_name?.[0]}{selectedLead.last_name?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <h3 className="font-bold text-slate-900">
+                        {selectedLead.first_name} {selectedLead.last_name}
+                      </h3>
+                      <p className="text-slate-600">{selectedLead.title}</p>
+                      <p className="text-slate-500">{selectedLead.companies?.name}</p>
+                      {getStatusBadge(selectedLead.status)}
+                    </div>
 
-                  <div className="space-y-3">
-                    {selectedLead.companies?.industry && (
+                    <div className="space-y-3">
+                      {selectedLead.companies?.industry && (
+                        <div className="flex items-center space-x-2">
+                          <Building2 className="w-4 h-4 text-slate-500" />
+                          <span className="text-sm text-slate-600">{selectedLead.companies.industry}</span>
+                        </div>
+                      )}
+                      {selectedLead.companies?.employee_count_min && (
+                        <div className="flex items-center space-x-2">
+                          <Users className="w-4 h-4 text-slate-500" />
+                          <span className="text-sm text-slate-600">
+                            {selectedLead.companies.employee_count_min}
+                            {selectedLead.companies.employee_count_max && 
+                              `-${selectedLead.companies.employee_count_max}`
+                            } employees
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center space-x-2">
-                        <Building2 className="w-4 h-4 text-slate-500" />
-                        <span className="text-sm text-slate-600">{selectedLead.companies.industry}</span>
-                      </div>
-                    )}
-                    {selectedLead.companies?.employee_count_min && (
-                      <div className="flex items-center space-x-2">
-                        <Users className="w-4 h-4 text-slate-500" />
+                        <Clock className="w-4 h-4 text-slate-500" />
                         <span className="text-sm text-slate-600">
-                          {selectedLead.companies.employee_count_min}
-                          {selectedLead.companies.employee_count_max && 
-                            `-${selectedLead.companies.employee_count_max}`
-                          } employees
+                          Added {new Date(selectedLead.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                    )}
-                    <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4 text-slate-500" />
-                      <span className="text-sm text-slate-600">
-                        Added {new Date(selectedLead.created_at).toLocaleDateString()}
-                      </span>
                     </div>
-                  </div>
 
-                  <div>
-                    <h4 className="font-medium text-slate-900 mb-2">Engagement Level</h4>
-                    <Progress value={getEngagementScore(selectedLead)} className="h-2" />
-                    <p className={`text-sm mt-1 ${getEngagementColor(getEngagementScore(selectedLead))}`}>
-                      {getEngagementScore(selectedLead)}% engaged
-                    </p>
-                  </div>
-
-                  {selectedLead.notes && (
                     <div>
-                      <h4 className="font-medium text-slate-900 mb-2">Notes</h4>
-                      <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
-                        {selectedLead.notes}
+                      <h4 className="font-medium text-slate-900 mb-2">Engagement Level</h4>
+                      <Progress value={getEngagementScore(selectedLead)} className="h-2" />
+                      <p className={`text-sm mt-1 ${getEngagementColor(getEngagementScore(selectedLead))}`}>
+                        {getEngagementScore(selectedLead)}% engaged
                       </p>
                     </div>
-                  )}
 
-                  <div className="grid grid-cols-2 gap-2 pt-4">
-                    <Button size="sm" variant="outline" className="flex items-center space-x-1">
-                      <MessageSquare className="w-4 h-4" />
-                      <span>Message</span>
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex items-center space-x-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>Schedule</span>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                    {selectedLead.notes && (
+                      <div>
+                        <h4 className="font-medium text-slate-900 mb-2">Notes</h4>
+                        <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
+                          {selectedLead.notes}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2 pt-4">
+                      <Button size="sm" variant="outline" className="flex items-center space-x-1">
+                        <MessageSquare className="w-4 h-4" />
+                        <span>Message</span>
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex items-center space-x-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>Schedule</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="list" className="space-y-4">
@@ -323,7 +339,7 @@ export const LeadPipeline = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {prospects.map(lead => (
+                {prospects && prospects.length > 0 ? prospects.map(lead => (
                   <div key={lead.id} className="flex items-center space-x-4 p-4 bg-white rounded-lg border border-slate-200">
                     <Avatar>
                       <AvatarFallback>
@@ -364,7 +380,16 @@ export const LeadPipeline = () => {
                       <ExternalLink className="w-4 h-4" />
                     </Button>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-8">
+                    <Bot className="w-16 h-16 mx-auto text-slate-400 mb-4" />
+                    <p className="text-slate-600 mb-4">No prospects found. Use AI Discovery to get started.</p>
+                    <Button onClick={() => setActiveView("discovery")} className="flex items-center space-x-2">
+                      <Search className="w-4 h-4" />
+                      <span>Start AI Discovery</span>
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -392,7 +417,7 @@ export const LeadPipeline = () => {
                   
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-slate-600">Total Prospects</span>
-                    <span className="font-bold text-slate-900">{prospects.length}</span>
+                    <span className="font-bold text-slate-900">{prospects?.length || 0}</span>
                   </div>
                 </div>
               </CardContent>
@@ -405,8 +430,8 @@ export const LeadPipeline = () => {
               <CardContent>
                 <div className="space-y-3">
                   {Object.entries(statusConfig).map(([status, config]) => {
-                    const count = prospects.filter(p => p.status === status).length;
-                    const percentage = prospects.length > 0 ? Math.round((count / prospects.length) * 100) : 0;
+                    const count = prospects ? prospects.filter(p => p.status === status).length : 0;
+                    const percentage = prospects && prospects.length > 0 ? Math.round((count / prospects.length) * 100) : 0;
                     
                     return (
                       <div key={status} className="flex items-center justify-between">
