@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Activity, 
   MessageSquare, 
@@ -16,94 +18,116 @@ import {
   AlertCircle
 } from "lucide-react";
 
-const recentActivities = [
-  {
-    id: 1,
-    type: "connection",
-    title: "New connection request sent",
-    description: "Sent personalized connection request to Sarah Mitchell at TechFlow Solutions",
-    timestamp: "2 hours ago",
-    status: "pending",
-    icon: UserPlus
-  },
-  {
-    id: 2,
-    type: "message",
-    title: "Follow-up message sent",
-    description: "Sent value-driven follow-up to James Rodriguez with industry insights",
-    timestamp: "4 hours ago",
-    status: "delivered",
-    icon: MessageSquare
-  },
-  {
-    id: 3,
-    type: "meeting",
-    title: "Meeting booked",
-    description: "Emma Thompson scheduled discovery call for tomorrow at 2:00 PM",
-    timestamp: "6 hours ago",
-    status: "confirmed",
-    icon: Calendar
-  },
-  {
-    id: 4,
-    type: "response",
-    title: "Received response",
-    description: "David Wilson responded positively to your employee retention insights",
-    timestamp: "8 hours ago",
-    status: "positive",
-    icon: Mail
-  },
-  {
-    id: 5,
-    type: "connection",
-    title: "Connection accepted",
-    description: "Lisa Chen accepted your connection request - HR Director at FinTech Pro",
-    timestamp: "1 day ago",
-    status: "accepted",
-    icon: CheckCircle
-  }
-];
+interface ActivityDashboardProps {
+  user?: any;
+}
 
-const weeklyStats = [
-  { day: "Mon", connections: 8, messages: 12, responses: 5 },
-  { day: "Tue", connections: 6, messages: 15, responses: 8 },
-  { day: "Wed", connections: 10, messages: 18, responses: 6 },
-  { day: "Thu", connections: 7, messages: 14, responses: 9 },
-  { day: "Fri", connections: 5, messages: 10, responses: 4 },
-  { day: "Sat", connections: 2, messages: 3, responses: 1 },
-  { day: "Sun", connections: 1, messages: 2, responses: 1 }
-];
+export const ActivityDashboard = ({ user }: ActivityDashboardProps) => {
+  // Fetch real recent interactions
+  const { data: recentInteractions } = useQuery({
+    queryKey: ['recent-interactions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('interactions')
+        .select(`
+          *,
+          prospects (
+            first_name,
+            last_name,
+            companies (name)
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
 
-export const ActivityDashboard = () => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed":
-      case "accepted":
-      case "positive":
-        return "bg-green-500";
-      case "pending":
-      case "delivered":
-        return "bg-blue-500";
-      case "declined":
-        return "bg-red-500";
-      default:
-        return "bg-slate-500";
+  // Fetch real analytics for weekly stats
+  const { data: weeklyAnalytics } = useQuery({
+    queryKey: ['weekly-analytics', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('analytics')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .order('date', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
+
+  // Fetch real appointments for today's metrics
+  const { data: todayAppointments } = useQuery({
+    queryKey: ['today-appointments', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('scheduled_at', `${today}T00:00:00`)
+        .lt('scheduled_at', `${today}T23:59:59`);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
+
+  // Calculate real metrics
+  const todayStats = {
+    outreach: recentInteractions?.filter(i => 
+      new Date(i.created_at).toDateString() === new Date().toDateString()
+    ).length || 0,
+    responseRate: recentInteractions && recentInteractions.length > 0 
+      ? Math.round((recentInteractions.filter(i => i.replied).length / recentInteractions.length) * 100)
+      : 0,
+    meetingsBooked: todayAppointments?.length || 0,
+    activeProspects: recentInteractions?.filter(i => i.replied && !i.response_content?.toLowerCase().includes('not interested')).length || 0
+  };
+
+  // Prepare weekly stats data
+  const weeklyStatsData = weeklyAnalytics?.map(day => ({
+    day: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }),
+    connections: day.connections_sent || 0,
+    messages: day.messages_sent || 0,
+    responses: day.messages_replied || 0
+  })) || [];
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'connection': return UserPlus;
+      case 'message': return MessageSquare;
+      case 'meeting': return Calendar;
+      case 'response': return Mail;
+      default: return MessageSquare;
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "confirmed":
-      case "accepted":
-      case "positive":
-        return <Badge className="bg-green-500 text-white">Success</Badge>;
-      case "pending":
-        return <Badge className="bg-blue-500 text-white">Pending</Badge>;
-      case "delivered":
-        return <Badge className="bg-blue-500 text-white">Delivered</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
+  const getStatusColor = (replied: boolean, responseContent?: string) => {
+    if (!replied) return "bg-blue-500";
+    if (responseContent?.toLowerCase().includes('not interested')) return "bg-red-500";
+    return "bg-green-500";
+  };
+
+  const getStatusBadge = (replied: boolean, responseContent?: string) => {
+    if (!replied) return <Badge className="bg-blue-500 text-white">Sent</Badge>;
+    if (responseContent?.toLowerCase().includes('not interested')) return <Badge className="bg-red-500 text-white">Declined</Badge>;
+    return <Badge className="bg-green-500 text-white">Positive</Badge>;
   };
 
   return (
@@ -125,8 +149,8 @@ export const ActivityDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600">Today's Outreach</p>
-                <p className="text-2xl font-bold text-slate-900">23</p>
-                <p className="text-xs text-green-600 font-medium">+15% from yesterday</p>
+                <p className="text-2xl font-bold text-slate-900">{todayStats.outreach}</p>
+                <p className="text-xs text-slate-500">Messages & connections</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
                 <MessageSquare className="w-6 h-6 text-white" />
@@ -140,8 +164,8 @@ export const ActivityDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600">Response Rate</p>
-                <p className="text-2xl font-bold text-slate-900">67%</p>
-                <p className="text-xs text-green-600 font-medium">+5% this week</p>
+                <p className="text-2xl font-bold text-slate-900">{todayStats.responseRate}%</p>
+                <p className="text-xs text-slate-500">From recent outreach</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-white" />
@@ -155,8 +179,8 @@ export const ActivityDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600">Meetings Booked</p>
-                <p className="text-2xl font-bold text-slate-900">8</p>
-                <p className="text-xs text-green-600 font-medium">This week</p>
+                <p className="text-2xl font-bold text-slate-900">{todayStats.meetingsBooked}</p>
+                <p className="text-xs text-slate-500">Today</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-white" />
@@ -170,8 +194,8 @@ export const ActivityDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600">Active Prospects</p>
-                <p className="text-2xl font-bold text-slate-900">43</p>
-                <p className="text-xs text-blue-600 font-medium">In conversation</p>
+                <p className="text-2xl font-bold text-slate-900">{todayStats.activeProspects}</p>
+                <p className="text-xs text-slate-500">In conversation</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
                 <Target className="w-6 h-6 text-white" />
@@ -191,29 +215,46 @@ export const ActivityDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg bg-slate-50">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getStatusColor(activity.status)}`}>
-                    <activity.icon className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-medium text-slate-900 text-sm">{activity.title}</p>
-                      {getStatusBadge(activity.status)}
+            {!recentInteractions || recentInteractions.length === 0 ? (
+              <div className="text-center py-8">
+                <Activity className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-slate-900 mb-2">No Recent Activity</h3>
+                <p className="text-slate-600">Start reaching out to prospects to see activity here.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentInteractions.slice(0, 5).map((interaction) => {
+                  const IconComponent = getActivityIcon(interaction.type);
+                  return (
+                    <div key={interaction.id} className="flex items-start space-x-3 p-3 rounded-lg bg-slate-50">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getStatusColor(interaction.replied, interaction.response_content)}`}>
+                        <IconComponent className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-medium text-slate-900 text-sm">
+                            {interaction.type === 'connection' ? 'Connection request sent' : 'Message sent'}
+                          </p>
+                          {getStatusBadge(interaction.replied, interaction.response_content)}
+                        </div>
+                        <p className="text-sm text-slate-600 mb-2">
+                          To {interaction.prospects?.first_name} {interaction.prospects?.last_name} at {interaction.prospects?.companies?.name}
+                        </p>
+                        <div className="flex items-center space-x-2">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          <span className="text-xs text-slate-500">
+                            {new Date(interaction.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm text-slate-600 mb-2">{activity.description}</p>
-                    <div className="flex items-center space-x-2">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      <span className="text-xs text-slate-500">{activity.timestamp}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Button variant="ghost" className="w-full mt-4">
-              View All Activity
-            </Button>
+                  );
+                })}
+                <Button variant="ghost" className="w-full mt-4">
+                  View All Activity
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -226,83 +267,105 @@ export const ActivityDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {weeklyStats.map((day, index) => {
-                const totalActivity = day.connections + day.messages + day.responses;
-                const maxActivity = Math.max(...weeklyStats.map(d => d.connections + d.messages + d.responses));
-                
-                return (
-                  <div key={day.day} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-slate-600">{day.day}</span>
-                      <span className="text-sm font-bold text-slate-900">{totalActivity} activities</span>
+            {weeklyStatsData.length === 0 ? (
+              <div className="text-center py-8">
+                <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-slate-900 mb-2">No Weekly Data</h3>
+                <p className="text-slate-600">Analytics will appear here once you start tracking activities.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {weeklyStatsData.map((day, index) => {
+                  const totalActivity = day.connections + day.messages + day.responses;
+                  const maxActivity = Math.max(...weeklyStatsData.map(d => d.connections + d.messages + d.responses), 1);
+                  
+                  return (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-slate-600">{day.day}</span>
+                        <span className="text-sm font-bold text-slate-900">{totalActivity} activities</span>
+                      </div>
+                      <Progress value={(totalActivity / maxActivity) * 100} className="h-2" />
+                      <div className="flex justify-between text-xs text-slate-500">
+                        <span>{day.connections} connections</span>
+                        <span>{day.messages} messages</span>
+                        <span>{day.responses} responses</span>
+                      </div>
                     </div>
-                    <Progress value={(totalActivity / maxActivity) * 100} className="h-2" />
-                    <div className="flex justify-between text-xs text-slate-500">
-                      <span>{day.connections} connections</span>
-                      <span>{day.messages} messages</span>
-                      <span>{day.responses} responses</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Performance Insights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5" />
-              <span>What's Working Well</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-                <p className="text-sm text-blue-100">Industry-specific templates have 23% higher response rates</p>
+      {/* Performance Insights - Only show if we have data */}
+      {recentInteractions && recentInteractions.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <CheckCircle className="w-5 h-5" />
+                <span>What's Working Well</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                  <p className="text-sm text-blue-100">
+                    {todayStats.responseRate}% response rate from recent outreach
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                  <p className="text-sm text-blue-100">
+                    {todayStats.meetingsBooked} meetings booked today
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                  <p className="text-sm text-blue-100">
+                    {todayStats.activeProspects} active conversations in progress
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-                <p className="text-sm text-blue-100">Tuesday-Thursday outreach performs best (73% response rate)</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-                <p className="text-sm text-blue-100">HR Directors respond 2x more than other titles</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5" />
-              <span>Optimization Opportunities</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-                <p className="text-sm text-orange-100">Follow-up timing could be optimized (try 3-day intervals)</p>
+          <Card className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <AlertCircle className="w-5 h-5" />
+                <span>Optimization Opportunities</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                  <p className="text-sm text-orange-100">
+                    {todayStats.outreach < 10 ? 'Increase daily outreach volume for better results' : 'Good outreach volume maintained'}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                  <p className="text-sm text-orange-100">
+                    {todayStats.responseRate < 30 ? 'Consider A/B testing message templates' : 'Strong response rate performance'}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                  <p className="text-sm text-orange-100">
+                    Focus on converting active prospects to meetings
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-                <p className="text-sm text-orange-100">Weekend outreach has low engagement - focus on weekdays</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-                <p className="text-sm text-orange-100">Manufacturing sector shows potential - increase targeting</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

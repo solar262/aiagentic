@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -167,7 +166,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
               </Card>
             </div>
             
-            <ActivityDashboard />
+            <ActivityDashboard user={user} />
           </TabsContent>
 
           <TabsContent value="linkedin">
