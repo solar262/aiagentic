@@ -111,7 +111,7 @@ export class ConversationAnalyzer {
     bookingIntent: boolean, 
     stage: string,
     rules: any
-  ): string {
+  ): Promise<string> {
     // Get prospect and company information
     const { data: prospect } = await supabase
       .from('prospects')
