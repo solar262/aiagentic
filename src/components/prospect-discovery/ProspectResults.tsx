@@ -5,7 +5,7 @@ import { CheckCircle } from "lucide-react";
 import { ProspectCard } from "./ProspectCard";
 
 interface Prospect {
-  id: number;
+  id: string;
   name: string;
   title: string;
   company: string;

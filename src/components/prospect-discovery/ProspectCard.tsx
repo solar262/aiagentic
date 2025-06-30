@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Building2, Users, MapPin, Target } from "lucide-react";
 
 interface Prospect {
-  id: number;
+  id: string;
   name: string;
   title: string;
   company: string;
