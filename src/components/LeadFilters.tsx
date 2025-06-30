@@ -22,9 +22,9 @@ import {
 
 export const LeadFilters = () => {
   const [companySize, setCompanySize] = useState([50]);
-  const [selectedIndustry, setSelectedIndustry] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("");
-  const [selectedJobTitle, setSelectedJobTitle] = useState("");
+  const [selectedIndustry, setSelectedIndustry] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedJobTitle, setSelectedJobTitle] = useState("all");
   const [keywordSearch, setKeywordSearch] = useState("");
   const [recentHiring, setRecentHiring] = useState(false);
   const [rapidGrowth, setRapidGrowth] = useState(false);
@@ -40,7 +40,10 @@ export const LeadFilters = () => {
         .select('*, companies(*)')
         .order('lead_score', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching prospects:', error);
+        return [];
+      }
       return data || [];
     }
   });
@@ -55,7 +58,10 @@ export const LeadFilters = () => {
         .not('industry', 'is', null)
         .not('location', 'is', null);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching companies:', error);
+        return [];
+      }
       return data || [];
     }
   });
@@ -66,9 +72,9 @@ export const LeadFilters = () => {
 
   // Filter prospects based on current filters
   const filteredProspects = prospects?.filter(prospect => {
-    if (selectedIndustry && prospect.companies?.industry !== selectedIndustry) return false;
-    if (selectedLocation && prospect.companies?.location !== selectedLocation) return false;
-    if (selectedJobTitle && !prospect.title.toLowerCase().includes(selectedJobTitle.toLowerCase())) return false;
+    if (selectedIndustry !== "all" && prospect.companies?.industry !== selectedIndustry) return false;
+    if (selectedLocation !== "all" && prospect.companies?.location !== selectedLocation) return false;
+    if (selectedJobTitle !== "all" && !prospect.title.toLowerCase().includes(selectedJobTitle.toLowerCase())) return false;
     if (keywordSearch && !prospect.title.toLowerCase().includes(keywordSearch.toLowerCase()) && 
         !prospect.companies?.name.toLowerCase().includes(keywordSearch.toLowerCase())) return false;
     return true;
@@ -146,7 +152,7 @@ export const LeadFilters = () => {
                 <SelectValue placeholder="Select industry" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Industries</SelectItem>
+                <SelectItem value="all">All Industries</SelectItem>
                 {uniqueIndustries.map(industry => (
                   <SelectItem key={industry} value={industry}>{industry}</SelectItem>
                 ))}
@@ -164,7 +170,7 @@ export const LeadFilters = () => {
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Locations</SelectItem>
+                <SelectItem value="all">All Locations</SelectItem>
                 {uniqueLocations.map(location => (
                   <SelectItem key={location} value={location}>{location}</SelectItem>
                 ))}
@@ -182,7 +188,7 @@ export const LeadFilters = () => {
                 <SelectValue placeholder="Select job title" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Titles</SelectItem>
+                <SelectItem value="all">All Titles</SelectItem>
                 <SelectItem value="hr director">HR Director</SelectItem>
                 <SelectItem value="people">People & Culture</SelectItem>
                 <SelectItem value="head of hr">Head of HR</SelectItem>

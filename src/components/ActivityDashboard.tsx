@@ -23,8 +23,8 @@ interface ActivityDashboardProps {
 }
 
 export const ActivityDashboard = ({ user }: ActivityDashboardProps) => {
-  // Fetch real recent interactions
-  const { data: recentInteractions } = useQuery({
+  // Fetch real recent interactions with error handling
+  const { data: recentInteractions, isLoading: interactionsLoading, error: interactionsError } = useQuery({
     queryKey: ['recent-interactions', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -43,14 +43,17 @@ export const ActivityDashboard = ({ user }: ActivityDashboardProps) => {
         .order('created_at', { ascending: false })
         .limit(10);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching interactions:', error);
+        return [];
+      }
       return data || [];
     },
     enabled: !!user?.id
   });
 
-  // Fetch real analytics for weekly stats
-  const { data: weeklyAnalytics } = useQuery({
+  // Fetch real analytics for weekly stats with error handling
+  const { data: weeklyAnalytics, isLoading: analyticsLoading } = useQuery({
     queryKey: ['weekly-analytics', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -62,14 +65,17 @@ export const ActivityDashboard = ({ user }: ActivityDashboardProps) => {
         .gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
         .order('date', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching analytics:', error);
+        return [];
+      }
       return data || [];
     },
     enabled: !!user?.id
   });
 
-  // Fetch real appointments for today's metrics
-  const { data: todayAppointments } = useQuery({
+  // Fetch real appointments for today's metrics with error handling
+  const { data: todayAppointments, isLoading: appointmentsLoading } = useQuery({
     queryKey: ['today-appointments', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -82,13 +88,16 @@ export const ActivityDashboard = ({ user }: ActivityDashboardProps) => {
         .gte('scheduled_at', `${today}T00:00:00`)
         .lt('scheduled_at', `${today}T23:59:59`);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        return [];
+      }
       return data || [];
     },
     enabled: !!user?.id
   });
 
-  // Calculate real metrics
+  // Calculate real metrics with safe defaults
   const todayStats = {
     outreach: recentInteractions?.filter(i => 
       new Date(i.created_at).toDateString() === new Date().toDateString()
@@ -100,7 +109,7 @@ export const ActivityDashboard = ({ user }: ActivityDashboardProps) => {
     activeProspects: recentInteractions?.filter(i => i.replied && !i.response_content?.toLowerCase().includes('not interested')).length || 0
   };
 
-  // Prepare weekly stats data
+  // Prepare weekly stats data with safe defaults
   const weeklyStatsData = weeklyAnalytics?.map(day => ({
     day: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }),
     connections: day.connections_sent || 0,
@@ -129,6 +138,33 @@ export const ActivityDashboard = ({ user }: ActivityDashboardProps) => {
     if (responseContent?.toLowerCase().includes('not interested')) return <Badge className="bg-red-500 text-white">Declined</Badge>;
     return <Badge className="bg-green-500 text-white">Positive</Badge>;
   };
+
+  // Show loading state
+  if (interactionsLoading || analyticsLoading || appointmentsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Activity Dashboard</h2>
+            <p className="text-slate-600">Loading your activity data...</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="bg-white/60 backdrop-blur-sm border-slate-200">
+              <CardContent className="p-6">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-slate-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-3 bg-slate-200 rounded w-2/3"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
