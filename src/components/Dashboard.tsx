@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,9 +9,9 @@ import { LeadPipeline } from "./LeadPipeline";
 import { ProspectInteractionDemo } from "./ProspectInteractionDemo";
 import { ActivityDashboard } from "./ActivityDashboard";
 import { CalendarIntegration } from "./CalendarIntegration";
-import { ConversationAnalyzer } from "./ConversationAnalyzer";
 import { BookingAgent } from "./BookingAgent";
 import { LeadFilters } from "./LeadFilters";
+import { ConversationAnalyzerComponent } from "./ConversationAnalyzerComponent";
 import { Linkedin, MessageSquare, Calendar, Users, TrendingUp, Settings, Target, Bot } from "lucide-react";
 
 interface DashboardProps {
@@ -21,6 +20,7 @@ interface DashboardProps {
 
 export const Dashboard = ({ user }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [isLinkedInConnected, setIsLinkedInConnected] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -136,7 +136,10 @@ export const Dashboard = ({ user }: DashboardProps) => {
           </TabsContent>
 
           <TabsContent value="linkedin">
-            <LinkedInConnector />
+            <LinkedInConnector 
+              isConnected={isLinkedInConnected}
+              onConnectionChange={setIsLinkedInConnected}
+            />
           </TabsContent>
 
           <TabsContent value="templates">
@@ -151,7 +154,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
           </TabsContent>
 
           <TabsContent value="interactions">
-            <ProspectInteractionDemo />
+            <ProspectInteractionDemo user={user} />
           </TabsContent>
 
           <TabsContent value="calendar">
@@ -159,11 +162,11 @@ export const Dashboard = ({ user }: DashboardProps) => {
           </TabsContent>
 
           <TabsContent value="analyzer">
-            <ConversationAnalyzer />
+            <ConversationAnalyzerComponent user={user} />
           </TabsContent>
 
           <TabsContent value="booking">
-            <BookingAgent />
+            <BookingAgent user={user} />
           </TabsContent>
         </Tabs>
       </div>
