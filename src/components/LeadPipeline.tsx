@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Building2, 
   Users, 
@@ -18,70 +20,74 @@ import {
   Clock
 } from "lucide-react";
 
-const mockLeads = [
-  {
-    id: 1,
-    name: "Sarah Mitchell",
-    title: "HR Director",
-    company: "TechFlow Solutions",
-    employees: "250-500",
-    industry: "Technology",
-    location: "London, UK",
-    status: "qualified",
-    lastContact: "2 days ago",
-    nextAction: "Follow-up call scheduled",
-    connectionDate: "2024-01-15",
-    engagement: 85,
-    notes: "Interested in employee retention strategies. Has budget allocated for Q2.",
-    avatar: "/placeholder.svg"
-  },
-  {
-    id: 2,
-    name: "James Rodriguez",
-    title: "People & Culture Lead",
-    company: "GreenTech Innovations",
-    employees: "100-250",
-    industry: "Clean Energy",
-    location: "Manchester, UK",
-    status: "engaged",
-    lastContact: "5 hours ago",
-    nextAction: "Send case study",
-    connectionDate: "2024-01-12",
-    engagement: 70,
-    notes: "Expanding team rapidly. Needs inclusive leadership training.",
-    avatar: "/placeholder.svg"
-  },
-  {
-    id: 3,
-    name: "Emma Thompson",
-    title: "Talent Manager",
-    company: "Financial Focus Ltd",
-    employees: "500+",
-    industry: "Financial Services",
-    location: "Edinburgh, UK",
-    status: "new",
-    lastContact: "1 day ago",
-    nextAction: "Initial connection made",
-    connectionDate: "2024-01-18",
-    engagement: 45,
-    notes: "Recently connected. Works in fast-paced environment.",
-    avatar: "/placeholder.svg"
-  }
-];
-
 const statusConfig = {
-  new: { label: "New Prospect", color: "bg-blue-500", textColor: "text-blue-700" },
-  engaged: { label: "Engaged", color: "bg-yellow-500", textColor: "text-yellow-700" },
-  qualified: { label: "Qualified", color: "bg-green-500", textColor: "text-green-700" },
-  meeting: { label: "Meeting Booked", color: "bg-purple-500", textColor: "text-purple-700" }
+  researched: { label: "New Prospect", color: "bg-blue-500", textColor: "text-blue-700" },
+  contacted: { label: "Contacted", color: "bg-yellow-500", textColor: "text-yellow-700" },
+  connected: { label: "Connected", color: "bg-green-500", textColor: "text-green-700" },
+  qualified: { label: "Qualified", color: "bg-purple-500", textColor: "text-purple-700" },
+  meeting_booked: { label: "Meeting Booked", color: "bg-indigo-500", textColor: "text-indigo-700" }
 };
 
 export const LeadPipeline = () => {
-  const [selectedLead, setSelectedLead] = useState(mockLeads[0]);
+  const [selectedLead, setSelectedLead] = useState<any>(null);
   const [activeView, setActiveView] = useState("pipeline");
+
+  // Fetch real prospects data
+  const { data: prospects, isLoading } = useQuery({
+    queryKey: ['prospects'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('prospects')
+        .select(`
+          *,
+          companies (
+            name,
+            industry,
+            employee_count_min,
+            employee_count_max,
+            location
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Fetch analytics for conversion rates
+  const { data: analytics } = useQuery({
+    queryKey: ['pipeline-analytics'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('analytics')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(30);
+      
+      if (error) throw error;
+      
+      // Calculate totals
+      const totals = data?.reduce((acc, day) => ({
+        connections_sent: acc.connections_sent + (day.connections_sent || 0),
+        connections_accepted: acc.connections_accepted + (day.connections_accepted || 0),
+        messages_sent: acc.messages_sent + (day.messages_sent || 0),
+        calls_booked: acc.calls_booked + (day.calls_booked || 0),
+      }), {
+        connections_sent: 0,
+        connections_accepted: 0,
+        messages_sent: 0,
+        calls_booked: 0,
+      });
+
+      return totals;
+    }
+  });
 
   const getStatusBadge = (status: string) => {
     const config = statusConfig[status as keyof typeof statusConfig];
+    if (!config) return <Badge>Unknown</Badge>;
+    
     return (
       <Badge className={`${config.color} text-white`}>
         {config.label}
@@ -89,11 +95,53 @@ export const LeadPipeline = () => {
     );
   };
 
+  const getEngagementScore = (prospect: any) => {
+    // Calculate engagement based on interactions
+    let score = 0;
+    if (prospect.last_interaction_at) score += 30;
+    if (prospect.status === 'connected') score += 40;
+    if (prospect.status === 'qualified') score += 70;
+    if (prospect.status === 'meeting_booked') score += 90;
+    return Math.min(score, 100);
+  };
+
   const getEngagementColor = (engagement: number) => {
     if (engagement >= 80) return "text-green-600";
     if (engagement >= 60) return "text-yellow-600";
     return "text-red-600";
   };
+
+  const conversionRate = analytics && analytics.connections_sent > 0 
+    ? Math.round((analytics.connections_accepted / analytics.connections_sent) * 100)
+    : 0;
+
+  const meetingBookRate = analytics && analytics.connections_accepted > 0
+    ? Math.round((analytics.calls_booked / analytics.connections_accepted) * 100)
+    : 0;
+
+  if (isLoading) {
+    return (
+      <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
+        <CardContent className="p-6">
+          <div className="text-center">Loading prospects...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!prospects || prospects.length === 0) {
+    return (
+      <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
+        <CardContent className="p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-slate-900 mb-2">No Prospects Yet</h3>
+            <p className="text-slate-600 mb-4">Start by connecting your LinkedIn account and importing prospects.</p>
+            <Button>Import Prospects</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -124,7 +172,7 @@ export const LeadPipeline = () => {
             {/* Pipeline Stages */}
             <div className="lg:col-span-2 space-y-4">
               {Object.entries(statusConfig).map(([status, config]) => {
-                const leadsInStage = mockLeads.filter(lead => lead.status === status);
+                const leadsInStage = prospects.filter(lead => lead.status === status);
                 return (
                   <Card key={status} className="bg-white/60 backdrop-blur-sm border-slate-200">
                     <CardHeader className="pb-3">
@@ -142,7 +190,7 @@ export const LeadPipeline = () => {
                           <div 
                             key={lead.id}
                             className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                              selectedLead.id === lead.id 
+                              selectedLead?.id === lead.id 
                                 ? 'border-blue-500 bg-blue-50' 
                                 : 'border-slate-200 bg-white hover:border-slate-300'
                             }`}
@@ -150,19 +198,27 @@ export const LeadPipeline = () => {
                           >
                             <div className="flex items-center space-x-3">
                               <Avatar className="w-10 h-10">
-                                <AvatarImage src={lead.avatar} />
-                                <AvatarFallback>{lead.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                <AvatarFallback>
+                                  {lead.first_name?.[0]}{lead.last_name?.[0]}
+                                </AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
-                                <p className="font-medium text-slate-900">{lead.name}</p>
+                                <p className="font-medium text-slate-900">
+                                  {lead.first_name} {lead.last_name}
+                                </p>
                                 <p className="text-sm text-slate-600">{lead.title}</p>
-                                <p className="text-sm text-slate-500">{lead.company}</p>
+                                <p className="text-sm text-slate-500">{lead.companies?.name}</p>
                               </div>
                             </div>
                             <div className="mt-3 flex items-center justify-between">
-                              <span className="text-xs text-slate-500">{lead.lastContact}</span>
-                              <div className={`text-xs font-medium ${getEngagementColor(lead.engagement)}`}>
-                                {lead.engagement}% engaged
+                              <span className="text-xs text-slate-500">
+                                {lead.last_interaction_at 
+                                  ? new Date(lead.last_interaction_at).toLocaleDateString()
+                                  : 'No interactions'
+                                }
+                              </span>
+                              <div className={`text-xs font-medium ${getEngagementColor(getEngagementScore(lead))}`}>
+                                {getEngagementScore(lead)}% engaged
                               </div>
                             </div>
                           </div>
@@ -175,76 +231,87 @@ export const LeadPipeline = () => {
             </div>
 
             {/* Lead Details */}
-            <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Lead Details</span>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <Avatar className="w-16 h-16 mx-auto mb-3">
-                    <AvatarImage src={selectedLead.avatar} />
-                    <AvatarFallback className="text-lg">
-                      {selectedLead.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <h3 className="font-bold text-slate-900">{selectedLead.name}</h3>
-                  <p className="text-slate-600">{selectedLead.title}</p>
-                  <p className="text-slate-500">{selectedLead.company}</p>
-                  {getStatusBadge(selectedLead.status)}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Building2 className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm text-slate-600">{selectedLead.industry}</span>
+            {selectedLead && (
+              <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Lead Details</span>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-center">
+                    <Avatar className="w-16 h-16 mx-auto mb-3">
+                      <AvatarFallback className="text-lg">
+                        {selectedLead.first_name?.[0]}{selectedLead.last_name?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <h3 className="font-bold text-slate-900">
+                      {selectedLead.first_name} {selectedLead.last_name}
+                    </h3>
+                    <p className="text-slate-600">{selectedLead.title}</p>
+                    <p className="text-slate-500">{selectedLead.companies?.name}</p>
+                    {getStatusBadge(selectedLead.status)}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm text-slate-600">{selectedLead.employees} employees</span>
+
+                  <div className="space-y-3">
+                    {selectedLead.companies?.industry && (
+                      <div className="flex items-center space-x-2">
+                        <Building2 className="w-4 h-4 text-slate-500" />
+                        <span className="text-sm text-slate-600">{selectedLead.companies.industry}</span>
+                      </div>
+                    )}
+                    {selectedLead.companies?.employee_count_min && (
+                      <div className="flex items-center space-x-2">
+                        <Users className="w-4 h-4 text-slate-500" />
+                        <span className="text-sm text-slate-600">
+                          {selectedLead.companies.employee_count_min}
+                          {selectedLead.companies.employee_count_max && 
+                            `-${selectedLead.companies.employee_count_max}`
+                          } employees
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-4 h-4 text-slate-500" />
+                      <span className="text-sm text-slate-600">
+                        Added {new Date(selectedLead.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm text-slate-600">Connected {selectedLead.connectionDate}</span>
+
+                  <div>
+                    <h4 className="font-medium text-slate-900 mb-2">Engagement Level</h4>
+                    <Progress value={getEngagementScore(selectedLead)} className="h-2" />
+                    <p className={`text-sm mt-1 ${getEngagementColor(getEngagementScore(selectedLead))}`}>
+                      {getEngagementScore(selectedLead)}% engaged
+                    </p>
                   </div>
-                </div>
 
-                <div>
-                  <h4 className="font-medium text-slate-900 mb-2">Engagement Level</h4>
-                  <Progress value={selectedLead.engagement} className="h-2" />
-                  <p className={`text-sm mt-1 ${getEngagementColor(selectedLead.engagement)}`}>
-                    {selectedLead.engagement}% engaged
-                  </p>
-                </div>
+                  {selectedLead.notes && (
+                    <div>
+                      <h4 className="font-medium text-slate-900 mb-2">Notes</h4>
+                      <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
+                        {selectedLead.notes}
+                      </p>
+                    </div>
+                  )}
 
-                <div>
-                  <h4 className="font-medium text-slate-900 mb-2">Notes</h4>
-                  <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
-                    {selectedLead.notes}
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-medium text-slate-900 mb-2">Next Action</h4>
-                  <p className="text-sm text-blue-600 font-medium">{selectedLead.nextAction}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 pt-4">
-                  <Button size="sm" variant="outline" className="flex items-center space-x-1">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Message</span>
-                  </Button>
-                  <Button size="sm" variant="outline" className="flex items-center space-x-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>Schedule</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="grid grid-cols-2 gap-2 pt-4">
+                    <Button size="sm" variant="outline" className="flex items-center space-x-1">
+                      <MessageSquare className="w-4 h-4" />
+                      <span>Message</span>
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex items-center space-x-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>Schedule</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
@@ -256,23 +323,42 @@ export const LeadPipeline = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockLeads.map(lead => (
+                {prospects.map(lead => (
                   <div key={lead.id} className="flex items-center space-x-4 p-4 bg-white rounded-lg border border-slate-200">
                     <Avatar>
-                      <AvatarImage src={lead.avatar} />
-                      <AvatarFallback>{lead.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                      <AvatarFallback>
+                        {lead.first_name?.[0]}{lead.last_name?.[0]}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <p className="font-medium text-slate-900">{lead.name}</p>
+                        <p className="font-medium text-slate-900">
+                          {lead.first_name} {lead.last_name}
+                        </p>
                         {getStatusBadge(lead.status)}
                       </div>
-                      <p className="text-sm text-slate-600">{lead.title} at {lead.company}</p>
-                      <p className="text-sm text-slate-500">{lead.industry} • {lead.employees} employees</p>
+                      <p className="text-sm text-slate-600">
+                        {lead.title} at {lead.companies?.name}
+                      </p>
+                      <p className="text-sm text-slate-500">
+                        {lead.companies?.industry}
+                        {lead.companies?.employee_count_min && 
+                          ` • ${lead.companies.employee_count_min}${
+                            lead.companies.employee_count_max ? `-${lead.companies.employee_count_max}` : '+'
+                          } employees`
+                        }
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium text-slate-900">{lead.engagement}%</p>
-                      <p className="text-xs text-slate-500">{lead.lastContact}</p>
+                      <p className="text-sm font-medium text-slate-900">
+                        {getEngagementScore(lead)}%
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {lead.last_interaction_at 
+                          ? new Date(lead.last_interaction_at).toLocaleDateString()
+                          : 'No interactions'
+                        }
+                      </p>
                     </div>
                     <Button variant="ghost" size="sm">
                       <ExternalLink className="w-4 h-4" />
@@ -294,50 +380,49 @@ export const LeadPipeline = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-slate-600">Conversion Rate</span>
-                    <span className="font-bold text-slate-900">67%</span>
+                    <span className="font-bold text-slate-900">{conversionRate}%</span>
                   </div>
-                  <Progress value={67} className="h-2" />
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Avg. Response Time</span>
-                    <span className="font-bold text-slate-900">4.2 hours</span>
-                  </div>
-                  <Progress value={85} className="h-2" />
+                  <Progress value={conversionRate} className="h-2" />
                   
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-slate-600">Meeting Book Rate</span>
-                    <span className="font-bold text-slate-900">23%</span>
+                    <span className="font-bold text-slate-900">{meetingBookRate}%</span>
                   </div>
-                  <Progress value={23} className="h-2" />
+                  <Progress value={meetingBookRate} className="h-2" />
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-600">Total Prospects</span>
+                    <span className="font-bold text-slate-900">{prospects.length}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
               <CardHeader>
-                <CardTitle>Industry Breakdown</CardTitle>
+                <CardTitle>Status Breakdown</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {[
-                    { industry: "Technology", count: 12, percentage: 40 },
-                    { industry: "Financial Services", count: 8, percentage: 27 },
-                    { industry: "Healthcare", count: 6, percentage: 20 },
-                    { industry: "Manufacturing", count: 4, percentage: 13 }
-                  ].map(item => (
-                    <div key={item.industry} className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">{item.industry}</span>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-slate-900">{item.count}</span>
-                        <div className="w-16 bg-slate-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-500 h-2 rounded-full" 
-                            style={{ width: `${item.percentage}%` }}
-                          ></div>
+                  {Object.entries(statusConfig).map(([status, config]) => {
+                    const count = prospects.filter(p => p.status === status).length;
+                    const percentage = prospects.length > 0 ? Math.round((count / prospects.length) * 100) : 0;
+                    
+                    return (
+                      <div key={status} className="flex items-center justify-between">
+                        <span className="text-sm text-slate-600">{config.label}</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-slate-900">{count}</span>
+                          <div className="w-16 bg-slate-200 rounded-full h-2">
+                            <div 
+                              className={`${config.color} h-2 rounded-full`}
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

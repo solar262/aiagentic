@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,8 @@ import { CalendarIntegration } from "./CalendarIntegration";
 import { BookingAgent } from "./BookingAgent";
 import { LeadFilters } from "./LeadFilters";
 import { ConversationAnalyzerComponent } from "./ConversationAnalyzerComponent";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Linkedin, MessageSquare, Calendar, Users, TrendingUp, Settings, Target, Bot } from "lucide-react";
 
 interface DashboardProps {
@@ -21,6 +24,39 @@ interface DashboardProps {
 export const Dashboard = ({ user }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isLinkedInConnected, setIsLinkedInConnected] = useState(false);
+
+  // Fetch real analytics data
+  const { data: analytics } = useQuery({
+    queryKey: ['analytics', user.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('analytics')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+        .limit(30);
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Calculate current week totals
+  const currentWeekTotals = analytics ? {
+    connectionsSent: analytics.reduce((sum, day) => sum + (day.connections_sent || 0), 0),
+    connectionsAccepted: analytics.reduce((sum, day) => sum + (day.connections_accepted || 0), 0),
+    messagesSent: analytics.reduce((sum, day) => sum + (day.messages_sent || 0), 0),
+    meetingsBooked: analytics.reduce((sum, day) => sum + (day.calls_booked || 0), 0),
+  } : {
+    connectionsSent: 0,
+    connectionsAccepted: 0,
+    messagesSent: 0,
+    meetingsBooked: 0,
+  };
+
+  const acceptanceRate = currentWeekTotals.connectionsSent > 0 
+    ? Math.round((currentWeekTotals.connectionsAccepted / currentWeekTotals.connectionsSent) * 100)
+    : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -37,11 +73,8 @@ export const Dashboard = ({ user }: DashboardProps) => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                Demo Mode
-              </Badge>
               <div className="text-sm text-slate-600">
-                Welcome, {user?.user_metadata?.full_name || "Demo User"}!
+                Welcome, {user?.user_metadata?.full_name || user?.email || "User"}!
               </div>
             </div>
           </div>
@@ -93,8 +126,8 @@ export const Dashboard = ({ user }: DashboardProps) => {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">127</div>
-                  <p className="text-xs text-muted-foreground">+12% from last week</p>
+                  <div className="text-2xl font-bold">{currentWeekTotals.connectionsSent}</div>
+                  <p className="text-xs text-muted-foreground">This week</p>
                 </CardContent>
               </Card>
               
@@ -104,8 +137,10 @@ export const Dashboard = ({ user }: DashboardProps) => {
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">68%</div>
-                  <p className="text-xs text-muted-foreground">+5% from last week</p>
+                  <div className="text-2xl font-bold">{acceptanceRate}%</div>
+                  <p className="text-xs text-muted-foreground">
+                    {currentWeekTotals.connectionsAccepted} of {currentWeekTotals.connectionsSent}
+                  </p>
                 </CardContent>
               </Card>
               
@@ -115,8 +150,8 @@ export const Dashboard = ({ user }: DashboardProps) => {
                   <MessageSquare className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">89</div>
-                  <p className="text-xs text-muted-foreground">+18% from last week</p>
+                  <div className="text-2xl font-bold">{currentWeekTotals.messagesSent}</div>
+                  <p className="text-xs text-muted-foreground">This week</p>
                 </CardContent>
               </Card>
               
@@ -126,8 +161,8 @@ export const Dashboard = ({ user }: DashboardProps) => {
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">14</div>
-                  <p className="text-xs text-muted-foreground">+2 from last week</p>
+                  <div className="text-2xl font-bold">{currentWeekTotals.meetingsBooked}</div>
+                  <p className="text-xs text-muted-foreground">This week</p>
                 </CardContent>
               </Card>
             </div>
