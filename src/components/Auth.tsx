@@ -81,7 +81,7 @@ export const Auth = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
-        email: "testuser@example.com",
+        email: "demo.user@gmail.com",
         password: "demo123456",
         options: {
           data: {
@@ -113,7 +113,7 @@ export const Auth = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: "testuser@example.com",
+        email: "demo.user@gmail.com",
         password: "demo123456",
       });
 
@@ -198,7 +198,7 @@ export const Auth = () => {
                       <Input
                         id="signin-email"
                         type="email"
-                        placeholder="testuser@example.com"
+                        placeholder="demo.user@gmail.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10"
@@ -254,7 +254,7 @@ export const Auth = () => {
                       <Input
                         id="signup-email"
                         type="email"
-                        placeholder="testuser@example.com"
+                        placeholder="demo.user@gmail.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10"
