@@ -18,49 +18,15 @@ import {
   MessageSquare
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-const upcomingMeetings = [
-  {
-    id: 1,
-    name: "Emma Thompson",
-    title: "Talent Manager",
-    company: "Financial Focus Ltd",
-    date: "2024-01-20",
-    time: "14:00",
-    type: "Discovery Call",
-    duration: "30 min",
-    status: "confirmed",
-    meetingLink: "https://calendly.com/dr-sharon/discovery-emma"
-  },
-  {
-    id: 2,
-    name: "Sarah Mitchell",
-    title: "HR Director",
-    company: "TechFlow Solutions",
-    date: "2024-01-22",
-    time: "10:30",
-    type: "Strategy Discussion",
-    duration: "45 min",
-    status: "confirmed",
-    meetingLink: "https://calendly.com/dr-sharon/strategy-sarah"
-  },
-  {
-    id: 3,
-    name: "James Rodriguez",
-    title: "People & Culture Lead",
-    company: "GreenTech Innovations",
-    date: "2024-01-23",
-    time: "15:00",
-    type: "Consultation",
-    duration: "60 min",
-    status: "pending",
-    meetingLink: "https://calendly.com/dr-sharon/consultation-james"
-  }
-];
+interface CalendarIntegrationProps {
+  user?: any;
+}
 
-export const CalendarIntegration = () => {
-  const [calendlyUrl, setCalendlyUrl] = useState("https://calendly.com/dr-sharon/discovery-call");
-  const [isConnected, setIsConnected] = useState(true);
+export const CalendarIntegration = ({ user }: CalendarIntegrationProps) => {
+  const [calendlyUrl, setCalendlyUrl] = useState("");
   const [selectedTimeSlots, setSelectedTimeSlots] = useState({
     discovery: "30 min",
     strategy: "45 min",
@@ -68,18 +34,97 @@ export const CalendarIntegration = () => {
   });
   const { toast } = useToast();
 
-  const handleSaveSettings = () => {
-    toast({
-      title: "Calendar Settings Saved",
-      description: "Your calendar integration settings have been updated successfully.",
-    });
+  // Fetch user settings
+  const { data: userSettings } = useQuery({
+    queryKey: ['user_settings', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id
+  });
+
+  // Fetch real appointments
+  const { data: appointments = [] } = useQuery({
+    queryKey: ['appointments', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          prospects (
+            first_name,
+            last_name,
+            title,
+            companies (name)
+          )
+        `)
+        .eq('user_id', user.id)
+        .gte('scheduled_at', new Date().toISOString())
+        .order('scheduled_at', { ascending: true })
+        .limit(10);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
+
+  const isConnected = !!userSettings?.calendly_link;
+
+  React.useEffect(() => {
+    if (userSettings?.calendly_link) {
+      setCalendlyUrl(userSettings.calendly_link);
+    }
+  }, [userSettings]);
+
+  const handleSaveSettings = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('user_settings')
+        .update({ calendly_link: calendlyUrl })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Calendar Settings Saved",
+        description: "Your calendar integration settings have been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleTestIntegration = () => {
+    if (!calendlyUrl) {
+      toast({
+        title: "No Calendar URL",
+        description: "Please enter your Calendly URL first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
-      title: "Integration Test Successful",
-      description: "Your Calendly integration is working properly.",
+      title: "Integration Test",
+      description: "Opening your calendar link to test the integration.",
     });
+    window.open(calendlyUrl, '_blank');
   };
 
   return (
@@ -92,7 +137,7 @@ export const CalendarIntegration = () => {
         <div className="flex items-center space-x-2">
           <Badge variant={isConnected ? "default" : "secondary"} className="flex items-center space-x-1">
             <Calendar className="w-3 h-3" />
-            <span>{isConnected ? "Connected" : "Disconnected"}</span>
+            <span>{isConnected ? "Connected" : "Not Connected"}</span>
           </Badge>
         </div>
       </div>
@@ -104,20 +149,20 @@ export const CalendarIntegration = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Settings className="w-5 h-5 text-blue-600" />
-                <span>Calendly Integration</span>
+                <span>Calendar Configuration</span>
               </CardTitle>
               <CardDescription>
-                Configure your Calendly settings for automated meeting booking
+                Configure your calendar settings for automated meeting booking
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="calendly-url">Calendly Profile URL</Label>
+                <Label htmlFor="calendly-url">Calendar Booking URL (Calendly, Cal.com, etc.)</Label>
                 <Input
                   id="calendly-url"
                   value={calendlyUrl}
                   onChange={(e) => setCalendlyUrl(e.target.value)}
-                  placeholder="https://calendly.com/your-profile"
+                  placeholder="https://calendly.com/your-profile/meeting"
                 />
               </div>
 
@@ -162,12 +207,21 @@ export const CalendarIntegration = () => {
                 </div>
               </div>
 
-              <Alert>
-                <CheckCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Calendar integration is active. Meeting requests will automatically book available time slots.
-                </AlertDescription>
-              </Alert>
+              {isConnected ? (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Calendar integration is active. Meeting requests will automatically use your configured booking URL.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Enter your calendar booking URL to enable automated meeting scheduling.
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <div className="flex space-x-2">
                 <Button onClick={handleSaveSettings} className="flex-1">
@@ -182,42 +236,29 @@ export const CalendarIntegration = () => {
 
           <Card className="bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0">
             <CardHeader>
-              <CardTitle>Meeting Types</CardTitle>
+              <CardTitle>Meeting Analytics</CardTitle>
               <CardDescription className="text-green-100">
-                Pre-configured meeting types for different conversation stages
+                Track your meeting performance and booking rates
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {[
-                  { 
-                    type: "Discovery Call", 
-                    duration: "30 min", 
-                    description: "Initial conversation to understand HR challenges",
-                    bookings: 23
-                  },
-                  { 
-                    type: "Strategy Discussion", 
-                    duration: "45 min", 
-                    description: "Deep dive into people-first culture strategies",
-                    bookings: 12
-                  },
-                  { 
-                    type: "Full Consultation", 
-                    duration: "60 min", 
-                    description: "Comprehensive review and recommendations",
-                    bookings: 8
-                  }
-                ].map((meeting, index) => (
-                  <div key={index} className="bg-green-700 p-3 rounded-lg">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-medium">{meeting.type}</p>
-                      <Badge className="bg-white text-green-600">{meeting.duration}</Badge>
-                    </div>
-                    <p className="text-sm text-green-100 mb-2">{meeting.description}</p>
-                    <p className="text-xs text-green-200">{meeting.bookings} bookings this month</p>
+                <div className="bg-green-700 p-3 rounded-lg">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-medium">Scheduled Meetings</p>
+                    <Badge className="bg-white text-green-600">{appointments.length}</Badge>
                   </div>
-                ))}
+                  <p className="text-sm text-green-100">Total upcoming appointments</p>
+                </div>
+                <div className="bg-green-700 p-3 rounded-lg">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-medium">Booking Rate</p>
+                    <Badge className="bg-white text-green-600">
+                      {appointments.length > 0 ? 'Active' : 'Getting Started'}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-green-100">Conversation to meeting conversion</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -230,60 +271,79 @@ export const CalendarIntegration = () => {
               <Clock className="w-5 h-5 text-purple-600" />
               <span>Upcoming Meetings</span>
             </CardTitle>
-            <CardDescription>Your scheduled conversations with HR prospects</CardDescription>
+            <CardDescription>Your scheduled conversations with prospects</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {upcomingMeetings.map((meeting) => (
-                <div key={meeting.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-medium">
-                        {meeting.name.split(' ').map(n => n[0]).join('')}
+            {appointments.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-slate-900 mb-2">No Meetings Scheduled</h3>
+                <p className="text-slate-600 mb-4">
+                  Start booking meetings with your prospects to see them here.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {appointments.map((appointment) => {
+                  const prospect = appointment.prospects;
+                  const company = prospect?.companies;
+                  const scheduledDate = new Date(appointment.scheduled_at);
+                  
+                  return (
+                    <div key={appointment.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-medium">
+                            {prospect ? `${prospect.first_name?.[0] || ''}${prospect.last_name?.[0] || ''}` : 'U'}
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-900">
+                              {prospect ? `${prospect.first_name} ${prospect.last_name}` : 'Unknown Contact'}
+                            </p>
+                            <p className="text-sm text-slate-600">{prospect?.title || 'No title'}</p>
+                            <p className="text-sm text-slate-500">{company?.name || 'No company'}</p>
+                          </div>
+                        </div>
+                        <Badge variant={appointment.status === "scheduled" ? "default" : "secondary"}>
+                          {appointment.status}
+                        </Badge>
                       </div>
-                      <div>
-                        <p className="font-medium text-slate-900">{meeting.name}</p>
-                        <p className="text-sm text-slate-600">{meeting.title}</p>
-                        <p className="text-sm text-slate-500">{meeting.company}</p>
+
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="w-4 h-4 text-slate-500" />
+                          <span className="text-sm text-slate-600">{scheduledDate.toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Clock className="w-4 h-4 text-slate-500" />
+                          <span className="text-sm text-slate-600">{scheduledDate.toLocaleTimeString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <span className="text-sm font-medium text-slate-900">{appointment.title}</span>
+                          <span className="text-sm text-slate-500">{appointment.duration_minutes} min</span>
+                        </div>
+                        <div className="flex space-x-2">
+                          {appointment.meeting_link && (
+                            <Button variant="ghost" size="sm" onClick={() => window.open(appointment.meeting_link, '_blank')}>
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <Badge variant={meeting.status === "confirmed" ? "default" : "secondary"}>
-                      {meeting.status}
-                    </Badge>
-                  </div>
+                  );
+                })}
+              </div>
+            )}
 
-                  <div className="grid grid-cols-2 gap-4 mb-3">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-slate-500" />
-                      <span className="text-sm text-slate-600">{meeting.date}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4 text-slate-500" />
-                      <span className="text-sm text-slate-600">{meeting.time}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <span className="text-sm font-medium text-slate-900">{meeting.type}</span>
-                      <span className="text-sm text-slate-500">{meeting.duration}</span>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <MessageSquare className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Button variant="ghost" className="w-full mt-4">
-              View All Meetings
-            </Button>
+            {appointments.length > 0 && (
+              <Button variant="ghost" className="w-full mt-4">
+                View All Meetings
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -293,7 +353,7 @@ export const CalendarIntegration = () => {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Link className="w-5 h-5 text-blue-600" />
-            <span>Calendar Embed Preview</span>
+            <span>Calendar Booking Preview</span>
           </CardTitle>
           <CardDescription>
             This is how your calendar will appear when prospects click to book a meeting
@@ -303,17 +363,26 @@ export const CalendarIntegration = () => {
           <div className="bg-slate-100 p-8 rounded-lg text-center">
             <div className="max-w-md mx-auto">
               <Calendar className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Book a Discovery Call</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Schedule a Meeting</h3>
               <p className="text-slate-600 mb-4">
-                Schedule a 30-minute conversation to discuss your people-first culture goals
+                Book a consultation to discuss your business needs and explore how we can help.
               </p>
-              <Button className="w-full">
-                Select a Time Slot
-              </Button>
+              {calendlyUrl ? (
+                <Button 
+                  className="w-full" 
+                  onClick={() => window.open(calendlyUrl, '_blank')}
+                >
+                  Open Calendar
+                </Button>
+              ) : (
+                <Button className="w-full" disabled>
+                  Configure Calendar URL First
+                </Button>
+              )}
             </div>
           </div>
           <p className="text-sm text-slate-500 mt-3 text-center">
-            Preview of your Calendly booking page integration
+            Preview of your calendar booking page integration
           </p>
         </CardContent>
       </Card>

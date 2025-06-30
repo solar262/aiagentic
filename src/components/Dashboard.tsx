@@ -67,8 +67,8 @@ export const Dashboard = ({ user }: DashboardProps) => {
                 <Linkedin className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">The Peoples Partner</h1>
-                <p className="text-sm text-slate-600">LinkedIn AI Assistant</p>
+                <h1 className="text-xl font-bold text-slate-900">LinkedIn AI Assistant</h1>
+                <p className="text-sm text-slate-600">Professional Outreach Platform</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -177,7 +177,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
           </TabsContent>
 
           <TabsContent value="templates">
-            <MessageTemplates />
+            <MessageTemplates user={user} />
           </TabsContent>
 
           <TabsContent value="pipeline">
@@ -192,7 +192,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
           </TabsContent>
 
           <TabsContent value="calendar">
-            <CalendarIntegration />
+            <CalendarIntegration user={user} />
           </TabsContent>
 
           <TabsContent value="analyzer">
