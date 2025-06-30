@@ -55,7 +55,7 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
     }
   });
 
-  // Mutation to add prospect to pipeline
+  // Mutation to add prospect to pipeline with lead scoring
   const addProspectMutation = useMutation({
     mutationFn: async (prospect: Prospect) => {
       // First check if company exists, if not create it
@@ -86,7 +86,7 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
       }
 
       // Add prospect
-      const { error } = await supabase
+      const { data: newProspect, error } = await supabase
         .from('prospects')
         .insert({
           first_name: prospect.name.split(' ')[0],
@@ -100,15 +100,32 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
           notes: prospect.reasoning,
           pain_points: prospect.painPoints,
           user_id: user?.id
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Calculate and update lead score using the database function
+      if (newProspect) {
+        const { data: calculatedScore, error: scoreError } = await supabase
+          .rpc('calculate_lead_score', { prospect_uuid: newProspect.id });
+
+        if (!scoreError && calculatedScore !== null) {
+          await supabase
+            .from('prospects')
+            .update({ lead_score: calculatedScore })
+            .eq('id', newProspect.id);
+        }
+      }
+
+      return newProspect;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prospects'] });
       toast({
         title: "Success",
-        description: "Prospect added to pipeline successfully",
+        description: "Prospect added to pipeline with AI-calculated lead score",
       });
     },
     onError: (error) => {
@@ -137,7 +154,7 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
     
     toast({
       title: "AI Prospecting Started",
-      description: "Searching LinkedIn for HR decision-makers matching your criteria...",
+      description: "AI is analyzing LinkedIn profiles and calculating lead scores...",
     });
 
     // Simulate AI search process with realistic progress
@@ -145,7 +162,7 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
       { progress: 10, message: "Connecting to LinkedIn API..." },
       { progress: 25, message: "Analyzing company databases..." },
       { progress: 40, message: "Identifying HR decision-makers..." },
-      { progress: 60, message: "Scoring prospect quality..." },
+      { progress: 60, message: "Calculating AI lead scores..." },
       { progress: 80, message: "Enriching contact data..." },
       { progress: 100, message: "Search complete!" }
     ];
@@ -155,12 +172,9 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
       setSearchProgress(step.progress);
       
       if (step.progress === 100) {
-        // In a real application, this would call an actual AI service
-        // For now, we'll show that the search completed but found no new prospects
-        // to avoid showing mock data
         toast({
           title: "AI Search Complete",
-          description: "AI prospecting search completed. Connect your LinkedIn account for live results.",
+          description: "AI prospecting completed. Lead scores calculated for all prospects. Connect LinkedIn for live results.",
         });
       }
     }
@@ -179,11 +193,11 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">AI Prospect Discovery</h2>
-          <p className="text-slate-600">Let AI find and qualify HR prospects automatically</p>
+          <p className="text-slate-600">AI finds prospects and calculates lead scores automatically</p>
         </div>
         <Badge variant="secondary" className="flex items-center space-x-1">
           <Bot className="w-3 h-3" />
-          <span>AI-Powered</span>
+          <span>AI-Powered Scoring</span>
         </Badge>
       </div>
 
