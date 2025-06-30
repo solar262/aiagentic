@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { LeadFilters } from "./LeadFilters";
 import { SearchConfiguration } from "./prospect-discovery/SearchConfiguration";
 import { SearchProgress } from "./prospect-discovery/SearchProgress";
@@ -14,7 +16,7 @@ interface ProspectDiscoveryProps {
 }
 
 interface Prospect {
-  id: number;
+  id: string;
   name: string;
   title: string;
   company: string;
@@ -38,10 +40,100 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
     locations: ["London", "Manchester", "Birmingham"]
   });
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch existing prospects to avoid duplicates
+  const { data: existingProspects } = useQuery({
+    queryKey: ['existing-prospects'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('prospects')
+        .select('first_name, last_name, linkedin_url');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Mutation to add prospect to pipeline
+  const addProspectMutation = useMutation({
+    mutationFn: async (prospect: Prospect) => {
+      // First check if company exists, if not create it
+      let companyId = null;
+      const { data: existingCompany } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('name', prospect.company)
+        .single();
+
+      if (!existingCompany) {
+        const { data: newCompany, error: companyError } = await supabase
+          .from('companies')
+          .insert({
+            name: prospect.company,
+            industry: prospect.industry,
+            employee_count_min: parseInt(prospect.employees.split('-')[0]) || 100,
+            employee_count_max: parseInt(prospect.employees.split('-')[1]) || 500,
+            location: prospect.location
+          })
+          .select()
+          .single();
+
+        if (companyError) throw companyError;
+        companyId = newCompany.id;
+      } else {
+        companyId = existingCompany.id;
+      }
+
+      // Add prospect
+      const { error } = await supabase
+        .from('prospects')
+        .insert({
+          first_name: prospect.name.split(' ')[0],
+          last_name: prospect.name.split(' ').slice(1).join(' '),
+          title: prospect.title,
+          linkedin_url: prospect.linkedinUrl,
+          location: prospect.location,
+          company_id: companyId,
+          status: 'researched',
+          lead_score: prospect.score,
+          notes: prospect.reasoning,
+          pain_points: prospect.painPoints,
+          user_id: user?.id
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prospects'] });
+      toast({
+        title: "Success",
+        description: "Prospect added to pipeline successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error adding prospect:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add prospect to pipeline",
+        variant: "destructive",
+      });
+    }
+  });
 
   const startAIProspecting = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to start AI prospecting",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSearching(true);
     setSearchProgress(0);
+    setDiscoveredProspects([]);
     
     toast({
       title: "AI Prospecting Started",
@@ -63,53 +155,12 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
       setSearchProgress(step.progress);
       
       if (step.progress === 100) {
-        // Simulate discovered prospects
-        const mockProspects: Prospect[] = [
-          {
-            id: 1,
-            name: "Sarah Johnson",
-            title: "HR Director",
-            company: "TechCorp London",
-            location: "London, UK",
-            employees: "250-500",
-            industry: "Technology",
-            linkedinUrl: "https://linkedin.com/in/sarah-johnson-hr",
-            score: 92,
-            reasoning: "Recently posted about employee retention challenges, company is actively hiring",
-            painPoints: ["Employee retention", "Remote work culture", "Team building"]
-          },
-          {
-            id: 2,
-            name: "Michael Chen",
-            title: "People & Culture Lead",
-            company: "InnovateTech",
-            location: "Manchester, UK",
-            employees: "100-250",
-            industry: "Technology",
-            linkedinUrl: "https://linkedin.com/in/michael-chen-culture",
-            score: 88,
-            reasoning: "Shared content about workplace culture, company recently secured funding",
-            painPoints: ["Culture development", "Leadership training", "Employee engagement"]
-          },
-          {
-            id: 3,
-            name: "Emma Wilson",
-            title: "Head of HR",
-            company: "DataSolutions Ltd",
-            location: "Birmingham, UK",
-            employees: "150-300",
-            industry: "Technology",
-            linkedinUrl: "https://linkedin.com/in/emma-wilson-hr",
-            score: 85,
-            reasoning: "Active in HR communities, company expanding rapidly",
-            painPoints: ["Recruitment efficiency", "Onboarding process", "Performance management"]
-          }
-        ];
-        
-        setDiscoveredProspects(mockProspects);
+        // In a real application, this would call an actual AI service
+        // For now, we'll show that the search completed but found no new prospects
+        // to avoid showing mock data
         toast({
-          title: "Prospects Found!",
-          description: `Discovered ${mockProspects.length} high-quality HR prospects matching your criteria.`,
+          title: "AI Search Complete",
+          description: "AI prospecting search completed. Connect your LinkedIn account for live results.",
         });
       }
     }
@@ -118,11 +169,7 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
   };
 
   const addProspectToPipeline = (prospect: Prospect) => {
-    toast({
-      title: "Prospect Added",
-      description: `${prospect.name} has been added to your lead pipeline.`,
-    });
-    
+    addProspectMutation.mutate(prospect);
     // Remove from discovered list
     setDiscoveredProspects(prev => prev.filter(p => p.id !== prospect.id));
   };
