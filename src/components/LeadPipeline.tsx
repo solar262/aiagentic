@@ -12,13 +12,14 @@ import {
   Users, 
   MessageSquare, 
   Calendar, 
-  Mail,
-  Phone,
   ExternalLink,
   MoreHorizontal,
   Clock,
   Bot,
-  Search
+  Search,
+  Zap,
+  Target,
+  TrendingUp
 } from "lucide-react";
 import { ProspectDiscovery } from "./ProspectDiscovery";
 
@@ -139,15 +140,20 @@ export const LeadPipeline = ({ user }: LeadPipelineProps) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Lead Pipeline</h2>
-          <p className="text-slate-600">AI-powered prospect discovery and pipeline management</p>
+          <h2 className="text-2xl font-bold text-slate-900 flex items-center space-x-2">
+            <Bot className="w-7 h-7 text-blue-600" />
+            <span>AI Prospect Pipeline</span>
+          </h2>
+          <p className="text-slate-600">Your AI assistant automatically finds, qualifies and manages HR prospects 24/7</p>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
-            Export Leads
-          </Button>
-          <Button size="sm">
-            Add Lead Manually
+        <div className="flex items-center space-x-3">
+          <Badge variant="secondary" className="flex items-center space-x-2 px-3 py-1">
+            <Zap className="w-4 h-4 text-yellow-500" />
+            <span>AI Active</span>
+          </Badge>
+          <Button variant="outline" size="sm" className="flex items-center space-x-2">
+            <TrendingUp className="w-4 h-4" />
+            <span>Export Pipeline</span>
           </Button>
         </div>
       </div>
@@ -158,9 +164,9 @@ export const LeadPipeline = ({ user }: LeadPipelineProps) => {
             <Bot className="w-4 h-4" />
             <span>AI Discovery</span>
           </TabsTrigger>
-          <TabsTrigger value="pipeline">Pipeline View</TabsTrigger>
-          <TabsTrigger value="list">List View</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="pipeline">Pipeline Management</TabsTrigger>
+          <TabsTrigger value="list">Prospect Database</TabsTrigger>
+          <TabsTrigger value="analytics">Performance Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="discovery" className="space-y-6">
@@ -170,15 +176,28 @@ export const LeadPipeline = ({ user }: LeadPipelineProps) => {
         <TabsContent value="pipeline" className="space-y-6">
           {(!prospects || prospects.length === 0) ? (
             <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div className="text-center">
-                  <Bot className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">No Prospects Yet</h3>
-                  <p className="text-slate-600 mb-4">Use AI Discovery to automatically find and qualify HR prospects.</p>
-                  <Button onClick={() => setActiveView("discovery")} className="flex items-center space-x-2">
-                    <Search className="w-4 h-4" />
-                    <span>Start AI Discovery</span>
-                  </Button>
+                  <div className="bg-blue-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                    <Bot className="w-10 h-10 text-blue-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-3">AI is Ready to Find Prospects</h3>
+                  <p className="text-slate-600 mb-6 max-w-md mx-auto">
+                    Your AI assistant will automatically discover, research and qualify HR prospects based on your criteria. 
+                    No manual work required - just set it and forget it.
+                  </p>
+                  <div className="space-y-3">
+                    <Button 
+                      onClick={() => setActiveView("discovery")} 
+                      className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Search className="w-4 h-4" />
+                      <span>Start AI Prospect Discovery</span>
+                    </Button>
+                    <p className="text-xs text-slate-500">
+                      AI will search LinkedIn, analyze profiles, and build your pipeline automatically
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -250,7 +269,7 @@ export const LeadPipeline = ({ user }: LeadPipelineProps) => {
                 <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span>Lead Details</span>
+                      <span>Prospect Details</span>
                       <Button variant="ghost" size="sm">
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
@@ -298,16 +317,16 @@ export const LeadPipeline = ({ user }: LeadPipelineProps) => {
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-slate-900 mb-2">Engagement Level</h4>
+                      <h4 className="font-medium text-slate-900 mb-2">AI Engagement Score</h4>
                       <Progress value={getEngagementScore(selectedLead)} className="h-2" />
                       <p className={`text-sm mt-1 ${getEngagementColor(getEngagementScore(selectedLead))}`}>
-                        {getEngagementScore(selectedLead)}% engaged
+                        {getEngagementScore(selectedLead)}% likelihood to engage
                       </p>
                     </div>
 
                     {selectedLead.notes && (
                       <div>
-                        <h4 className="font-medium text-slate-900 mb-2">Notes</h4>
+                        <h4 className="font-medium text-slate-900 mb-2">AI Notes</h4>
                         <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
                           {selectedLead.notes}
                         </p>
@@ -317,11 +336,11 @@ export const LeadPipeline = ({ user }: LeadPipelineProps) => {
                     <div className="grid grid-cols-2 gap-2 pt-4">
                       <Button size="sm" variant="outline" className="flex items-center space-x-1">
                         <MessageSquare className="w-4 h-4" />
-                        <span>Message</span>
+                        <span>AI Message</span>
                       </Button>
                       <Button size="sm" variant="outline" className="flex items-center space-x-1">
                         <Calendar className="w-4 h-4" />
-                        <span>Schedule</span>
+                        <span>Schedule Call</span>
                       </Button>
                     </div>
                   </CardContent>
@@ -334,8 +353,11 @@ export const LeadPipeline = ({ user }: LeadPipelineProps) => {
         <TabsContent value="list" className="space-y-4">
           <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
             <CardHeader>
-              <CardTitle>All Leads</CardTitle>
-              <CardDescription>Complete list of your HR prospects</CardDescription>
+              <CardTitle className="flex items-center space-x-2">
+                <Target className="w-5 h-5 text-blue-600" />
+                <span>AI-Discovered Prospects</span>
+              </CardTitle>
+              <CardDescription>Complete database of prospects found and qualified by your AI assistant</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -369,12 +391,7 @@ export const LeadPipeline = ({ user }: LeadPipelineProps) => {
                       <p className="text-sm font-medium text-slate-900">
                         {getEngagementScore(lead)}%
                       </p>
-                      <p className="text-xs text-slate-500">
-                        {lead.last_interaction_at 
-                          ? new Date(lead.last_interaction_at).toLocaleDateString()
-                          : 'No interactions'
-                        }
-                      </p>
+                      <p className="text-xs text-slate-500">AI Score</p>
                     </div>
                     <Button variant="ghost" size="sm">
                       <ExternalLink className="w-4 h-4" />
@@ -382,11 +399,14 @@ export const LeadPipeline = ({ user }: LeadPipelineProps) => {
                   </div>
                 )) : (
                   <div className="text-center py-8">
-                    <Bot className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-                    <p className="text-slate-600 mb-4">No prospects found. Use AI Discovery to get started.</p>
+                    <div className="bg-blue-50 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                      <Bot className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h3 className="font-medium text-slate-900 mb-2">Let AI Build Your Prospect Database</h3>
+                    <p className="text-slate-600 mb-4">Your AI assistant will automatically find and qualify prospects matching your ideal customer profile.</p>
                     <Button onClick={() => setActiveView("discovery")} className="flex items-center space-x-2">
                       <Search className="w-4 h-4" />
-                      <span>Start AI Discovery</span>
+                      <span>Activate AI Discovery</span>
                     </Button>
                   </div>
                 )}
@@ -399,24 +419,27 @@ export const LeadPipeline = ({ user }: LeadPipelineProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
               <CardHeader>
-                <CardTitle>Pipeline Analytics</CardTitle>
+                <CardTitle className="flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                  <span>AI Performance Metrics</span>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Conversion Rate</span>
+                    <span className="text-sm text-slate-600">AI Conversion Rate</span>
                     <span className="font-bold text-slate-900">{conversionRate}%</span>
                   </div>
                   <Progress value={conversionRate} className="h-2" />
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Meeting Book Rate</span>
+                    <span className="text-sm text-slate-600">Meeting Success Rate</span>
                     <span className="font-bold text-slate-900">{meetingBookRate}%</span>
                   </div>
                   <Progress value={meetingBookRate} className="h-2" />
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Total Prospects</span>
+                    <span className="text-sm text-slate-600">Total AI-Found Prospects</span>
                     <span className="font-bold text-slate-900">{prospects?.length || 0}</span>
                   </div>
                 </div>
@@ -425,7 +448,7 @@ export const LeadPipeline = ({ user }: LeadPipelineProps) => {
 
             <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
               <CardHeader>
-                <CardTitle>Status Breakdown</CardTitle>
+                <CardTitle>Pipeline Distribution</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
