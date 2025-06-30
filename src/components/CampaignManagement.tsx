@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
+
+type CampaignStatus = Database["public"]["Enums"]["campaign_status"];
 
 interface CampaignManagementProps {
   user?: any;
@@ -122,7 +124,7 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
 
   // Update campaign status mutation
   const updateCampaignStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string, status: string }) => {
+    mutationFn: async ({ id, status }: { id: string, status: CampaignStatus }) => {
       const { error } = await supabase
         .from('campaigns')
         .update({ 
@@ -154,7 +156,7 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
   };
 
   const handleStartCampaign = (campaign: any) => {
-    updateCampaignStatusMutation.mutate({ id: campaign.id, status: 'active' });
+    updateCampaignStatusMutation.mutate({ id: campaign.id, status: 'active' as CampaignStatus });
     toast({
       title: "Campaign Started",
       description: `${campaign.name} is now running.`,
@@ -162,7 +164,7 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
   };
 
   const handlePauseCampaign = (campaign: any) => {
-    updateCampaignStatusMutation.mutate({ id: campaign.id, status: 'paused' });
+    updateCampaignStatusMutation.mutate({ id: campaign.id, status: 'paused' as CampaignStatus });
     toast({
       title: "Campaign Paused",
       description: `${campaign.name} has been paused.`,
@@ -170,7 +172,7 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
   };
 
   const handleStopCampaign = (campaign: any) => {
-    updateCampaignStatusMutation.mutate({ id: campaign.id, status: 'completed' });
+    updateCampaignStatusMutation.mutate({ id: campaign.id, status: 'completed' as CampaignStatus });
     toast({
       title: "Campaign Stopped",
       description: `${campaign.name} has been completed.`,
