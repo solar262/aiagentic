@@ -22,6 +22,8 @@ import { LeadPipeline } from "./LeadPipeline";
 import { MessageTemplates } from "./MessageTemplates";
 import { CalendarIntegration } from "./CalendarIntegration";
 import { UserGuide } from "./UserGuide";
+import { Settings as SettingsComponent } from "./Settings";
+import { CampaignManagement } from "./CampaignManagement";
 
 interface DashboardProps {
   user?: any;
@@ -55,7 +57,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 bg-white/60 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 bg-white/60 backdrop-blur-sm">
             <TabsTrigger value="overview" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -63,6 +65,10 @@ export const Dashboard = ({ user }: DashboardProps) => {
             <TabsTrigger value="prospects" className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Prospects</span>
+            </TabsTrigger>
+            <TabsTrigger value="campaigns" className="flex items-center space-x-2">
+              <Target className="w-4 h-4" />
+              <span className="hidden sm:inline">Campaigns</span>
             </TabsTrigger>
             <TabsTrigger value="templates" className="flex items-center space-x-2">
               <MessageSquare className="w-4 h-4" />
@@ -74,7 +80,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
             </TabsTrigger>
             <TabsTrigger value="guide" className="flex items-center space-x-2">
               <BookOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">User Guide</span>
+              <span className="hidden sm:inline">Guide</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="w-4 h-4" />
@@ -91,6 +97,10 @@ export const Dashboard = ({ user }: DashboardProps) => {
             <LeadPipeline user={user} />
           </TabsContent>
 
+          <TabsContent value="campaigns" className="space-y-6">
+            <CampaignManagement user={user} />
+          </TabsContent>
+
           <TabsContent value="templates" className="space-y-6">
             <MessageTemplates user={user} />
           </TabsContent>
@@ -104,18 +114,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
-            <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Settings className="w-5 h-5 text-slate-700" />
-                  <span>Settings</span>
-                </CardTitle>
-                <CardDescription>Configure your account and preferences</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-slate-600">Settings panel coming soon...</p>
-              </CardContent>
-            </Card>
+            <SettingsComponent user={user} />
           </TabsContent>
         </Tabs>
       </div>
