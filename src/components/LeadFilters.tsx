@@ -203,7 +203,7 @@ export const LeadFilters = () => {
                 <Checkbox 
                   id="recent-hiring"
                   checked={recentHiring}
-                  onCheckedChange={setRecentHiring}
+                  onCheckedChange={(checked) => setRecentHiring(checked === true)}
                 />
                 <label htmlFor="recent-hiring" className="text-sm text-slate-600">
                   Posted jobs in last 30 days
@@ -213,7 +213,7 @@ export const LeadFilters = () => {
                 <Checkbox 
                   id="rapid-growth"
                   checked={rapidGrowth}
-                  onCheckedChange={setRapidGrowth}
+                  onCheckedChange={(checked) => setRapidGrowth(checked === true)}
                 />
                 <label htmlFor="rapid-growth" className="text-sm text-slate-600">
                   Rapid growth indicators
@@ -227,7 +227,7 @@ export const LeadFilters = () => {
                 <Checkbox 
                   id="active-linkedin"
                   checked={activeLinkedIn}
-                  onCheckedChange={setActiveLinkedIn}
+                  onCheckedChange={(checked) => setActiveLinkedIn(checked === true)}
                 />
                 <label htmlFor="active-linkedin" className="text-sm text-slate-600">
                   Active LinkedIn poster
@@ -237,7 +237,7 @@ export const LeadFilters = () => {
                 <Checkbox 
                   id="shares-hr"
                   checked={sharesHRContent}
-                  onCheckedChange={setSharesHRContent}
+                  onCheckedChange={(checked) => setSharesHRContent(checked === true)}
                 />
                 <label htmlFor="shares-hr" className="text-sm text-slate-600">
                   Shares HR content
