@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { LinkedInConnector } from "./LinkedInConnector";
 import { LeadFilters } from "./LeadFilters";
+import { BookingAgent } from "./BookingAgent";
 
 interface DashboardProps {
   user: any;
@@ -162,9 +162,10 @@ export const Dashboard = ({ user }: DashboardProps) => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="linkedin" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-white/60 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-6 bg-white/60 backdrop-blur-sm">
             <TabsTrigger value="linkedin">LinkedIn Setup</TabsTrigger>
             <TabsTrigger value="prospects">Find Prospects</TabsTrigger>
+            <TabsTrigger value="booking">AI Booking Agent</TabsTrigger>
             <TabsTrigger value="messages">Message Templates</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -183,6 +184,14 @@ export const Dashboard = ({ user }: DashboardProps) => {
               <p className="text-slate-600">Use advanced filters to identify HR decision-makers at companies with 100+ employees.</p>
             </div>
             <LeadFilters />
+          </TabsContent>
+
+          <TabsContent value="booking" className="space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">AI Booking Agent</h2>
+              <p className="text-slate-600">Automated conversation management and consultation booking for qualified prospects.</p>
+            </div>
+            <BookingAgent user={user} />
           </TabsContent>
 
           <TabsContent value="messages" className="space-y-6">

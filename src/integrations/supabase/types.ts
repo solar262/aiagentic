@@ -116,6 +116,92 @@ export type Database = {
           },
         ]
       }
+      booking_automation_rules: {
+        Row: {
+          auto_book_enabled: boolean | null
+          booking_message_template: string | null
+          created_at: string
+          id: string
+          min_confidence_score: number | null
+          qualification_questions: string[] | null
+          trigger_keywords: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_book_enabled?: boolean | null
+          booking_message_template?: string | null
+          created_at?: string
+          id?: string
+          min_confidence_score?: number | null
+          qualification_questions?: string[] | null
+          trigger_keywords?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_book_enabled?: boolean | null
+          booking_message_template?: string | null
+          created_at?: string
+          id?: string
+          min_confidence_score?: number | null
+          qualification_questions?: string[] | null
+          trigger_keywords?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      booking_conversations: {
+        Row: {
+          ai_confidence_score: number | null
+          appointment_type: string | null
+          booking_intent_detected: boolean | null
+          conversation_stage: string
+          created_at: string
+          id: string
+          last_ai_response: string | null
+          prospect_id: string
+          prospect_responses: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_confidence_score?: number | null
+          appointment_type?: string | null
+          booking_intent_detected?: boolean | null
+          conversation_stage?: string
+          created_at?: string
+          id?: string
+          last_ai_response?: string | null
+          prospect_id: string
+          prospect_responses?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_confidence_score?: number | null
+          appointment_type?: string | null
+          booking_intent_detected?: boolean | null
+          conversation_stage?: string
+          created_at?: string
+          id?: string
+          last_ai_response?: string | null
+          prospect_id?: string
+          prospect_responses?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_conversations_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           booked_count: number | null
