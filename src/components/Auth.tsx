@@ -81,7 +81,7 @@ export const Auth = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
-        email: "demo@example.com",
+        email: "demo.user@thepeoplespartner.com",
         password: "demo123456",
         options: {
           data: {
@@ -113,7 +113,7 @@ export const Auth = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: "demo@example.com",
+        email: "demo.user@thepeoplespartner.com",
         password: "demo123456",
       });
 
