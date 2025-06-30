@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface CalendarIntegrationProps {
@@ -32,6 +33,7 @@ export const CalendarIntegration = ({ user }: CalendarIntegrationProps) => {
     consultation: "60 min"
   });
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch user settings
   const { data: userSettings } = useQuery({
@@ -44,7 +46,7 @@ export const CalendarIntegration = ({ user }: CalendarIntegrationProps) => {
         .eq('user_id', user.id)
         .single();
       
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
     enabled: !!user?.id
@@ -77,7 +79,7 @@ export const CalendarIntegration = ({ user }: CalendarIntegrationProps) => {
     enabled: !!user?.id
   });
 
-  const isConnected = !!userSettings?.calendly_link;
+  const isConnected = !!(userSettings?.calendly_link || calendlyUrl);
 
   React.useEffect(() => {
     if (userSettings?.calendly_link) {
@@ -85,32 +87,43 @@ export const CalendarIntegration = ({ user }: CalendarIntegrationProps) => {
     }
   }, [userSettings]);
 
-  const handleSaveSettings = async () => {
-    if (!user?.id) return;
-    
-    try {
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (newUrl: string) => {
+      if (!user?.id) throw new Error('No user ID');
+      
       const { error } = await supabase
         .from('user_settings')
-        .update({ calendly_link: calendlyUrl })
-        .eq('user_id', user.id);
+        .upsert({
+          user_id: user.id,
+          calendly_link: newUrl,
+          updated_at: new Date().toISOString()
+        });
       
       if (error) throw error;
-      
+    },
+    onSuccess: () => {
       toast({
         title: "Calendar Settings Saved",
         description: "Your calendar integration settings have been updated successfully.",
       });
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['user_settings', user?.id] });
+    },
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",
         variant: "destructive",
       });
     }
+  });
+
+  const handleSaveSettings = () => {
+    updateSettingsMutation.mutate(calendlyUrl);
   };
 
   const handleTestIntegration = () => {
-    if (!calendlyUrl) {
+    const urlToTest = calendlyUrl || userSettings?.calendly_link;
+    if (!urlToTest) {
       toast({
         title: "No Calendar URL",
         description: "Please enter your Calendly URL first.",
@@ -123,7 +136,14 @@ export const CalendarIntegration = ({ user }: CalendarIntegrationProps) => {
       title: "Integration Test",
       description: "Opening your calendar link to test the integration.",
     });
-    window.open(calendlyUrl, '_blank');
+    window.open(urlToTest, '_blank');
+  };
+
+  const handleOpenCalendar = () => {
+    const urlToOpen = calendlyUrl || userSettings?.calendly_link;
+    if (urlToOpen) {
+      window.open(urlToOpen, '_blank');
+    }
   };
 
   return (
@@ -223,8 +243,8 @@ export const CalendarIntegration = ({ user }: CalendarIntegrationProps) => {
               )}
 
               <div className="flex space-x-2">
-                <Button onClick={handleSaveSettings} className="flex-1">
-                  Save Settings
+                <Button onClick={handleSaveSettings} className="flex-1" disabled={updateSettingsMutation.isPending}>
+                  {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
                 </Button>
                 <Button variant="outline" onClick={handleTestIntegration}>
                   Test Integration
@@ -366,10 +386,10 @@ export const CalendarIntegration = ({ user }: CalendarIntegrationProps) => {
               <p className="text-slate-600 mb-4">
                 Book a consultation to discuss your business needs and explore how we can help.
               </p>
-              {calendlyUrl ? (
+              {(calendlyUrl || userSettings?.calendly_link) ? (
                 <Button 
                   className="w-full" 
-                  onClick={() => window.open(calendlyUrl, '_blank')}
+                  onClick={handleOpenCalendar}
                 >
                   Open Calendar
                 </Button>
