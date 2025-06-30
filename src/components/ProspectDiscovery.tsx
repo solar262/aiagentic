@@ -17,7 +17,8 @@ import {
   Pause,
   CheckCircle,
   AlertCircle,
-  Zap
+  Zap,
+  Settings
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LeadFilters } from "./LeadFilters";
