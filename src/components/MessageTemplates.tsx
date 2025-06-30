@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,11 +67,11 @@ export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
     enabled: !!user?.id
   });
 
-  // Group templates by type
+  // Group templates by type - map database types to UI categories
   const messageTemplates = {
-    connection: templates.filter(t => t.type === 'connection'),
-    followUp: templates.filter(t => t.type === 'follow_up'),
-    nurture: templates.filter(t => t.type === 'nurture')
+    connection: templates.filter(t => t.type === 'connection_request'),
+    followUp: templates.filter(t => t.type === 'follow_up' || t.type === 'value_add' || t.type === 're_engagement'),
+    nurture: templates.filter(t => t.type === 'booking_request')
   };
 
   // Set default selected template
