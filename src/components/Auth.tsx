@@ -28,7 +28,8 @@ export const Auth = () => {
         options: {
           data: {
             full_name: name,
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/`
         }
       });
 
@@ -76,6 +77,64 @@ export const Auth = () => {
     }
   };
 
+  const handleDemoSignUp = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: "demo@thepeoplespartner.com",
+        password: "demo123456",
+        options: {
+          data: {
+            full_name: "Demo User",
+          },
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Demo account created!",
+        description: "You can now test all the AI features.",
+      });
+    } catch (error: any) {
+      console.error('Demo signup error:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoSignIn = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: "demo@thepeoplespartner.com",
+        password: "demo123456",
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Demo access granted!",
+        description: "Welcome to The Peoples Partner AI Assistant.",
+      });
+    } catch (error: any) {
+      console.error('Demo signin error:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -97,6 +156,33 @@ export const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Demo Access Section */}
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="font-medium text-blue-900 mb-2">🚀 Quick Demo Access</h3>
+              <p className="text-sm text-blue-700 mb-3">
+                Test all AI features instantly with pre-configured demo account
+              </p>
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={handleDemoSignUp} 
+                  disabled={loading}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  {loading ? "Creating..." : "Demo Sign Up"}
+                </Button>
+                <Button 
+                  onClick={handleDemoSignIn} 
+                  disabled={loading}
+                  size="sm"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {loading ? "Signing in..." : "Demo Sign In"}
+                </Button>
+              </div>
+            </div>
+
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
