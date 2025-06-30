@@ -77,58 +77,47 @@ export const Auth = () => {
     }
   };
 
-  const handleDemoSignUp = async () => {
+  const handleDemoAccess = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: "demo.user@gmail.com",
-        password: "demo123456",
-        options: {
-          data: {
-            full_name: "Demo User",
-          },
-          emailRedirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Demo account created!",
-        description: "You can now test all the AI features.",
-      });
-    } catch (error: any) {
-      console.error('Demo signup error:', error);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDemoSignIn = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Try to sign in first with the demo account
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: "demo.user@gmail.com",
         password: "demo123456",
       });
 
-      if (error) throw error;
+      if (signInError) {
+        // If sign in fails, try to create the account
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: "demo.user@gmail.com",
+          password: "demo123456",
+          options: {
+            data: {
+              full_name: "Demo User",
+            },
+            emailRedirectTo: `${window.location.origin}/`
+          }
+        });
 
-      toast({
-        title: "Demo access granted!",
-        description: "Welcome to The Peoples Partner AI Assistant.",
-      });
+        if (signUpError) throw signUpError;
+
+        toast({
+          title: "Demo account created!",
+          description: "Since email confirmation is required, please check the demo email or contact support for instant access.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Demo access granted!",
+          description: "Welcome to The Peoples Partner AI Assistant.",
+        });
+      }
     } catch (error: any) {
-      console.error('Demo signin error:', error);
+      console.error('Demo access error:', error);
       toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+        title: "Demo Access Info",
+        description: "For instant demo access, please use your own email to sign up or contact support.",
+        variant: "default",
       });
     } finally {
       setLoading(false);
@@ -160,27 +149,15 @@ export const Auth = () => {
             <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <h3 className="font-medium text-blue-900 mb-2">🚀 Quick Demo Access</h3>
               <p className="text-sm text-blue-700 mb-3">
-                Test all AI features instantly with pre-configured demo account
+                Try the AI features with a demo account (may require email confirmation)
               </p>
-              <div className="flex space-x-2">
-                <Button 
-                  onClick={handleDemoSignUp} 
-                  disabled={loading}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                >
-                  {loading ? "Creating..." : "Demo Sign Up"}
-                </Button>
-                <Button 
-                  onClick={handleDemoSignIn} 
-                  disabled={loading}
-                  size="sm"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                  {loading ? "Signing in..." : "Demo Sign In"}
-                </Button>
-              </div>
+              <Button 
+                onClick={handleDemoAccess} 
+                disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                {loading ? "Accessing..." : "Access Demo"}
+              </Button>
             </div>
 
             <Tabs defaultValue="signin" className="w-full">
@@ -198,7 +175,7 @@ export const Auth = () => {
                       <Input
                         id="signin-email"
                         type="email"
-                        placeholder="demo.user@gmail.com"
+                        placeholder="your.email@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10"
@@ -238,7 +215,7 @@ export const Auth = () => {
                       <Input
                         id="signup-name"
                         type="text"
-                        placeholder="Michelle Raymond"
+                        placeholder="Your Full Name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="pl-10"
@@ -254,7 +231,7 @@ export const Auth = () => {
                       <Input
                         id="signup-email"
                         type="email"
-                        placeholder="demo.user@gmail.com"
+                        placeholder="your.email@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10"
