@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { LinkedInConnector } from "./LinkedInConnector";
 import { ProspectDiscovery } from "./ProspectDiscovery";
@@ -56,7 +57,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
       case 'subscription':
         return <SubscriptionCard />;
       case 'usage':
-        return <UsageDashboard />;
+        return <UsageDashboard user={user} />;
       case 'settings':
         return <Settings />;
       case 'guide':
