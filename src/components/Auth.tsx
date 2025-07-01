@@ -8,7 +8,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Linkedin, Mail, Lock, User } from "lucide-react";
+import { useAntiAbuse } from "@/hooks/useAntiAbuse";
+import { generateDeviceFingerprint, getClientIP } from "@/utils/deviceFingerprint";
+import { Linkedin, Mail, Lock, User, AlertTriangle } from "lucide-react";
 
 export const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -16,18 +18,35 @@ export const Auth = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const { toast } = useToast();
+  const { checkForDuplicateAccount, trackUserSession } = useAntiAbuse();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Check for duplicate accounts
+      const isDuplicate = await checkForDuplicateAccount(email);
+      
+      if (isDuplicate) {
+        toast({
+          title: "Account Verification Required",
+          description: "Multiple accounts detected. Phone verification will be required.",
+          variant: "destructive",
+        });
+      }
+
+      const fingerprint = generateDeviceFingerprint();
+      const ip = await getClientIP();
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: name,
+            device_fingerprint: fingerprint,
+            signup_ip: ip,
           },
           emailRedirectTo: `${window.location.origin}/`
         }
@@ -35,9 +54,22 @@ export const Auth = () => {
 
       if (error) throw error;
 
+      // Create subscriber record with tracking info
+      if (data.user) {
+        await supabase.from('subscribers').insert({
+          user_id: data.user.id,
+          email: email,
+          account_creation_ip: ip,
+          is_flagged_duplicate: isDuplicate,
+          verification_required: isDuplicate,
+        });
+      }
+
       toast({
         title: "Account created successfully!",
-        description: "Please check your email to verify your account.",
+        description: isDuplicate 
+          ? "Please check your email to verify your account. Phone verification will be required."
+          : "Please check your email to verify your account.",
       });
     } catch (error: any) {
       toast({
@@ -61,6 +93,9 @@ export const Auth = () => {
       });
 
       if (error) throw error;
+
+      // Track user session after successful login
+      await trackUserSession();
 
       toast({
         title: "Welcome back!",
@@ -107,6 +142,9 @@ export const Auth = () => {
           variant: "default",
         });
       } else {
+        // Track demo user session
+        await trackUserSession();
+        
         toast({
           title: "Demo access granted!",
           description: "Welcome to The Peoples Partner AI Assistant.",
@@ -145,6 +183,14 @@ export const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Anti-abuse notice */}
+            <Alert className="mb-6 border-orange-200 bg-orange-50">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                <strong>Account Protection:</strong> We monitor for multiple accounts and may require phone verification for security.
+              </AlertDescription>
+            </Alert>
+
             {/* Demo Access Section */}
             <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <h3 className="font-medium text-blue-900 mb-2">🚀 Quick Demo Access</h3>

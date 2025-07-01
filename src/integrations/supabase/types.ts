@@ -322,6 +322,42 @@ export type Database = {
         }
         Relationships: []
       }
+      device_fingerprints: {
+        Row: {
+          created_at: string
+          fingerprint_hash: string
+          first_seen_at: string
+          id: string
+          ip_address: unknown | null
+          is_blocked: boolean | null
+          last_seen_at: string
+          user_agent: string | null
+          user_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          fingerprint_hash: string
+          first_seen_at?: string
+          id?: string
+          ip_address?: unknown | null
+          is_blocked?: boolean | null
+          last_seen_at?: string
+          user_agent?: string | null
+          user_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          fingerprint_hash?: string
+          first_seen_at?: string
+          id?: string
+          ip_address?: unknown | null
+          is_blocked?: boolean | null
+          last_seen_at?: string
+          user_agent?: string | null
+          user_count?: number | null
+        }
+        Relationships: []
+      }
       interactions: {
         Row: {
           campaign_id: string | null
@@ -456,6 +492,9 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          phone_number: string | null
+          phone_verified: boolean | null
+          phone_verified_at: string | null
           updated_at: string
         }
         Insert: {
@@ -464,6 +503,9 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          phone_number?: string | null
+          phone_verified?: boolean | null
+          phone_verified_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -472,6 +514,9 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          phone_number?: string | null
+          phone_verified?: boolean | null
+          phone_verified_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -561,37 +606,46 @@ export type Database = {
       }
       subscribers: {
         Row: {
+          account_creation_ip: unknown | null
           created_at: string
           email: string
           id: string
+          is_flagged_duplicate: boolean | null
           stripe_customer_id: string | null
           subscribed: boolean
           subscription_end: string | null
           subscription_tier: string | null
           updated_at: string
           user_id: string | null
+          verification_required: boolean | null
         }
         Insert: {
+          account_creation_ip?: unknown | null
           created_at?: string
           email: string
           id?: string
+          is_flagged_duplicate?: boolean | null
           stripe_customer_id?: string | null
           subscribed?: boolean
           subscription_end?: string | null
           subscription_tier?: string | null
           updated_at?: string
           user_id?: string | null
+          verification_required?: boolean | null
         }
         Update: {
+          account_creation_ip?: unknown | null
           created_at?: string
           email?: string
           id?: string
+          is_flagged_duplicate?: boolean | null
           stripe_customer_id?: string | null
           subscribed?: boolean
           subscription_end?: string | null
           subscription_tier?: string | null
           updated_at?: string
           user_id?: string | null
+          verification_required?: boolean | null
         }
         Relationships: []
       }
@@ -627,6 +681,33 @@ export type Database = {
           reports_generated?: number | null
           templates_created?: number | null
           updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          fingerprint_hash: string | null
+          id: string
+          ip_address: unknown
+          last_activity_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fingerprint_hash?: string | null
+          id?: string
+          ip_address: unknown
+          last_activity_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fingerprint_hash?: string | null
+          id?: string
+          ip_address?: unknown
+          last_activity_at?: string
           user_id?: string | null
         }
         Relationships: []
@@ -771,6 +852,22 @@ export type Database = {
       can_user_perform_action: {
         Args: { user_uuid: string; action_type: string }
         Returns: boolean
+      }
+      detect_duplicate_account: {
+        Args: {
+          user_email: string
+          user_ip: unknown
+          device_fingerprint: string
+        }
+        Returns: boolean
+      }
+      get_adjusted_usage_limits: {
+        Args: { user_uuid: string }
+        Returns: {
+          max_connections: number
+          max_templates: number
+          requires_verification: boolean
+        }[]
       }
       get_user_subscription_limits: {
         Args: { user_uuid: string }
