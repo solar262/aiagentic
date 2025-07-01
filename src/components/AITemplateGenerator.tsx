@@ -53,7 +53,6 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
         .single();
       
       if (error && error.code !== 'PGRST116') {
-        // PGRST116 means no rows found, which is fine
         console.error('Error fetching AI usage:', error);
         setCurrentUsage(0);
         return;
@@ -68,7 +67,6 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
 
   const canGenerateTemplate = async () => {
     if (!isValidUser) {
-      // For demo users, allow generation but don't save to database
       return currentUsage < max_ai_templates;
     }
     
@@ -79,20 +77,17 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
       
       if (error) {
         console.error('Error checking generation limits:', error);
-        // Fallback to client-side check
         return currentUsage < max_ai_templates;
       }
       return data;
     } catch (error) {
       console.error('Error checking generation limits:', error);
-      // Fallback to client-side check
       return currentUsage < max_ai_templates;
     }
   };
 
   const incrementUsage = async () => {
     if (!isValidUser) {
-      // For demo users, just increment locally
       setCurrentUsage(prev => prev + 1);
       return;
     }
@@ -102,11 +97,9 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
         user_uuid: user.id
       });
       
-      // Update local usage count
       setCurrentUsage(prev => prev + 1);
     } catch (error) {
       console.error('Error incrementing usage:', error);
-      // Still increment locally for better UX
       setCurrentUsage(prev => prev + 1);
     }
   };
@@ -151,14 +144,17 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
       const { templateName, subject, content } = response.data;
       
       if (!templateName || !content) {
+        console.error('Invalid template data:', response.data);
         throw new Error('Invalid template data received');
       }
 
-      console.log('Generated template:', { templateName, subject, content });
+      console.log('Generated template data:', { templateName, subject, content });
       
       // Save the generated template (only for valid users)
       if (isValidUser) {
-        const { error: saveError } = await supabase
+        console.log('Saving template to database for user:', user.id);
+        
+        const { data: savedTemplate, error: saveError } = await supabase
           .from('message_templates')
           .insert({
             user_id: user.id,
@@ -167,14 +163,16 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
             subject: subject || null,
             content: content,
             variables: extractVariables(content),
-          });
+          })
+          .select()
+          .single();
 
         if (saveError) {
           console.error('Error saving template:', saveError);
-          throw saveError;
+          throw new Error(`Failed to save template: ${saveError.message}`);
         }
 
-        console.log('Template saved successfully');
+        console.log('Template saved successfully:', savedTemplate);
 
         // Increment usage counter
         await incrementUsage();
@@ -185,8 +183,8 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
 
       toast({
         title: "✨ Template Generated Successfully!",
-        description: `"${templateName}" has been created and ${isValidUser ? 'saved to your library' : 'is ready to use'}. Click "My Templates" tab to view and edit it.`,
-        duration: 6000,
+        description: `"${templateName}" has been created and ${isValidUser ? 'saved to your templates' : 'is ready to use'}. Switch to "My Templates" tab to view it.`,
+        duration: 8000,
       });
 
       if (onTemplateCreated) {
@@ -196,7 +194,7 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
       console.error("Error generating template:", error);
       toast({
         title: "Generation Failed",
-        description: error.message || "Failed to generate template. Please try again or contact support if the issue persists.",
+        description: error.message || "Failed to generate template. Please try again.",
         variant: "destructive",
       });
     } finally {

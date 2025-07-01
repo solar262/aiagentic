@@ -38,7 +38,7 @@ serve(async (req) => {
 5. Are concise but compelling (2-3 paragraphs max)
 6. Have high response rates
 
-IMPORTANT: Always return a valid JSON object with exactly these fields:
+IMPORTANT: Return ONLY a clean JSON object with no markdown formatting or code blocks. The JSON should have exactly these fields:
 - templateName: A descriptive name for the template
 - subject: An engaging subject line (if applicable)
 - content: The message template with LinkedIn variables
@@ -62,7 +62,7 @@ Make the message feel personal and relevant to their specific role and industry 
           { role: 'system', content: systemPrompt },
           { 
             role: 'user', 
-            content: `Generate a ${type.replace('_', ' ')} template for ${targetTitle} professionals in the ${targetIndustry} industry. Return only valid JSON with templateName, subject, and content fields.` 
+            content: `Generate a ${type.replace('_', ' ')} template for ${targetTitle} professionals in the ${targetIndustry} industry. Return ONLY valid JSON with templateName, subject, and content fields. Do not wrap in markdown code blocks.` 
           }
         ],
         temperature: 0.7,
@@ -76,12 +76,14 @@ Make the message feel personal and relevant to their specific role and industry 
     }
 
     const data = await response.json();
-    const generatedText = data.choices[0].message.content;
+    let generatedText = data.choices[0].message.content.trim();
 
-    console.log('Generated text:', generatedText);
+    console.log('Raw generated text:', generatedText);
 
+    // Clean up the response - remove markdown code blocks if present
+    generatedText = generatedText.replace(/```json\n?|\n?```/g, '').trim();
+    
     try {
-      // Try to parse as JSON first
       const templateData = JSON.parse(generatedText);
       
       // Validate required fields
@@ -95,15 +97,33 @@ Make the message feel personal and relevant to their specific role and industry 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (parseError) {
-      console.log('JSON parsing failed, creating fallback template');
+      console.log('JSON parsing failed, extracting content manually');
+      console.log('Parse error:', parseError.message);
       
-      // If JSON parsing fails, create a structured response
+      // If JSON parsing fails, try to extract content manually
+      let extractedContent = '';
+      let extractedSubject = '';
+      let extractedName = '';
+      
+      // Try to find content between quotes or extract the main message
+      const contentMatch = generatedText.match(/"content":\s*"([^"]*(?:\\.[^"]*)*)"/);
+      const subjectMatch = generatedText.match(/"subject":\s*"([^"]*(?:\\.[^"]*)*)"/);
+      const nameMatch = generatedText.match(/"templateName":\s*"([^"]*(?:\\.[^"]*)*)"/);
+      
+      if (contentMatch) {
+        extractedContent = contentMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+      } else {
+        // Fallback: use the entire text as content
+        extractedContent = `Hi {{firstName}},\n\nI noticed your work at {{company}} in the ${targetIndustry} industry and your role as ${targetTitle}. I'd love to connect and share insights on building people-first cultures through effective employee retention strategies.\n\nLooking forward to connecting!\n\nBest regards`;
+      }
+      
+      extractedSubject = subjectMatch ? subjectMatch[1] : `Building people-first cultures in ${targetIndustry}`;
+      extractedName = nameMatch ? nameMatch[1] : `${targetTitle} ${type.replace('_', ' ')} - ${targetIndustry}`;
+      
       const fallbackTemplate = {
-        templateName: `${targetTitle} ${type.replace('_', ' ')} - ${targetIndustry}`,
-        subject: type === 'connection_request' ? 
-          `Building people-first cultures in ${targetIndustry}` : 
-          `Following up on our conversation`,
-        content: generatedText.replace(/```json|```/g, '').trim()
+        templateName: extractedName,
+        subject: extractedSubject,
+        content: extractedContent
       };
       
       console.log('Created fallback template:', fallbackTemplate);
