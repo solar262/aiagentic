@@ -76,6 +76,7 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchProgress, setSearchProgress] = useState(0);
   const [discoveredProspects, setDiscoveredProspects] = useState<Prospect[]>([]);
+  const [addedProspects, setAddedProspects] = useState<Prospect[]>([]);
   const [searchCriteria] = useState({
     industry: "Technology",
     companySize: "100-500",
@@ -100,28 +101,6 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
         return [];
       }
       return data || [];
-    }
-  });
-
-  // Mutation to add prospect to pipeline with lead scoring
-  const addProspectMutation = useMutation({
-    mutationFn: async (prospect: Prospect) => {
-      // For demo purposes, just show success toast
-      console.log('Adding prospect to pipeline:', prospect);
-      return prospect;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Prospect added to pipeline successfully!",
-      });
-    },
-    onError: (error) => {
-      console.error('Error adding prospect:', error);
-      toast({
-        title: "Demo Mode",
-        description: "Prospect would be added to pipeline in live version",
-      });
     }
   });
 
@@ -162,9 +141,18 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
   };
 
   const addProspectToPipeline = (prospect: Prospect) => {
-    addProspectMutation.mutate(prospect);
+    console.log('Adding prospect to pipeline:', prospect);
+    
     // Remove from discovered list
     setDiscoveredProspects(prev => prev.filter(p => p.id !== prospect.id));
+    
+    // Add to added prospects list
+    setAddedProspects(prev => [...prev, prospect]);
+    
+    toast({
+      title: "Success!",
+      description: `${prospect.name} has been added to your pipeline`,
+    });
   };
 
   return (
@@ -192,6 +180,22 @@ export const ProspectDiscovery = ({ user }: ProspectDiscoveryProps) => {
         discoveredProspects={discoveredProspects}
         onAddProspectToPipeline={addProspectToPipeline}
       />
+
+      {addedProspects.length > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <h3 className="font-semibold text-green-900 mb-2">Added to Pipeline ({addedProspects.length})</h3>
+          <div className="space-y-2">
+            {addedProspects.map(prospect => (
+              <div key={prospect.id} className="flex items-center justify-between text-sm text-green-800">
+                <span>{prospect.name} - {prospect.company}</span>
+                <Badge variant="outline" className="text-green-700 border-green-700">
+                  {prospect.score}% match
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <AICapabilities />
 
