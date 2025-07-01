@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -127,6 +126,8 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
     setGeneratingStates(prev => ({ ...prev, [buttonKey]: true }));
     
     try {
+      console.log('Starting AI generation for:', preset);
+      
       const response = await supabase.functions.invoke('generate-template', {
         body: {
           type: preset.type,
@@ -136,13 +137,28 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
         }
       });
 
-      if (response.error) throw response.error;
+      console.log('AI generation response:', response);
+
+      if (response.error) {
+        console.error('Generation error:', response.error);
+        throw new Error(response.error.message || 'Failed to generate template');
+      }
+
+      if (!response.data) {
+        throw new Error('No data received from AI generation');
+      }
 
       const { templateName, subject, content } = response.data;
       
+      if (!templateName || !content) {
+        throw new Error('Invalid template data received');
+      }
+
+      console.log('Generated template:', { templateName, subject, content });
+      
       // Save the generated template (only for valid users)
       if (isValidUser) {
-        const { error } = await supabase
+        const { error: saveError } = await supabase
           .from('message_templates')
           .insert({
             user_id: user.id,
@@ -153,7 +169,12 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
             variables: extractVariables(content),
           });
 
-        if (error) throw error;
+        if (saveError) {
+          console.error('Error saving template:', saveError);
+          throw saveError;
+        }
+
+        console.log('Template saved successfully');
 
         // Increment usage counter
         await incrementUsage();
@@ -163,9 +184,9 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
       }
 
       toast({
-        title: "Smart Template Created!",
-        description: `Generated "${templateName}"${isValidUser ? ' and added to your library' : ' (demo mode)'}. Switch to "My Templates" tab to view it.`,
-        duration: 5000,
+        title: "✨ Template Generated Successfully!",
+        description: `"${templateName}" has been created and ${isValidUser ? 'saved to your library' : 'is ready to use'}. Click "My Templates" tab to view and edit it.`,
+        duration: 6000,
       });
 
       if (onTemplateCreated) {
@@ -175,7 +196,7 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
       console.error("Error generating template:", error);
       toast({
         title: "Generation Failed",
-        description: "Failed to generate template. Please try again.",
+        description: error.message || "Failed to generate template. Please try again or contact support if the issue persists.",
         variant: "destructive",
       });
     } finally {

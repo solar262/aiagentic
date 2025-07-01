@@ -24,6 +24,8 @@ serve(async (req) => {
   try {
     const { type, targetIndustry, targetTitle, personalValue }: GenerateTemplateRequest = await req.json();
 
+    console.log('Generating template for:', { type, targetIndustry, targetTitle });
+
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
@@ -33,10 +35,10 @@ serve(async (req) => {
 2. Reference specific industry challenges
 3. Include clear value propositions
 4. Use appropriate LinkedIn variables like {{firstName}}, {{company}}, {{title}}
-5. Are concise but compelling
+5. Are concise but compelling (2-3 paragraphs max)
 6. Have high response rates
 
-Return your response as a JSON object with:
+IMPORTANT: Always return a valid JSON object with exactly these fields:
 - templateName: A descriptive name for the template
 - subject: An engaging subject line (if applicable)
 - content: The message template with LinkedIn variables
@@ -60,34 +62,51 @@ Make the message feel personal and relevant to their specific role and industry 
           { role: 'system', content: systemPrompt },
           { 
             role: 'user', 
-            content: `Generate a ${type} template for ${targetTitle} professionals in the ${targetIndustry} industry.` 
+            content: `Generate a ${type.replace('_', ' ')} template for ${targetTitle} professionals in the ${targetIndustry} industry. Return only valid JSON with templateName, subject, and content fields.` 
           }
         ],
         temperature: 0.7,
+        max_tokens: 1000,
       }),
     });
 
     if (!response.ok) {
+      console.error('OpenAI API error:', response.status, response.statusText);
       throw new Error(`OpenAI API error: ${response.statusText}`);
     }
 
     const data = await response.json();
     const generatedText = data.choices[0].message.content;
 
+    console.log('Generated text:', generatedText);
+
     try {
+      // Try to parse as JSON first
       const templateData = JSON.parse(generatedText);
+      
+      // Validate required fields
+      if (!templateData.templateName || !templateData.content) {
+        throw new Error('Missing required fields in generated template');
+      }
+
+      console.log('Successfully parsed template:', templateData);
+      
       return new Response(JSON.stringify(templateData), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-    } catch {
+    } catch (parseError) {
+      console.log('JSON parsing failed, creating fallback template');
+      
       // If JSON parsing fails, create a structured response
       const fallbackTemplate = {
         templateName: `${targetTitle} ${type.replace('_', ' ')} - ${targetIndustry}`,
         subject: type === 'connection_request' ? 
           `Building people-first cultures in ${targetIndustry}` : 
           `Following up on our conversation`,
-        content: generatedText
+        content: generatedText.replace(/```json|```/g, '').trim()
       };
+      
+      console.log('Created fallback template:', fallbackTemplate);
       
       return new Response(JSON.stringify(fallbackTemplate), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
