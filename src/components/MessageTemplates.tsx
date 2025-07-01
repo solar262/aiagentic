@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,12 +16,12 @@ import {
   TrendingUp,
   Calendar,
   BookOpen,
-  Play,
-  Plus
+  Play
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { CreateTemplateDialog } from "./CreateTemplateDialog";
 
 interface MessageTemplatesProps {
   user?: any;
@@ -51,7 +52,7 @@ export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
   });
 
   // Fetch real message templates from database
-  const { data: templates = [] } = useQuery({
+  const { data: templates = [], refetch: refetchTemplates } = useQuery({
     queryKey: ['message_templates', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -99,6 +100,7 @@ export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
       if (error) throw error;
       
       setIsEditing(false);
+      refetchTemplates();
       toast({
         title: "Template Updated",
         description: "Your message template has been saved successfully.",
@@ -112,6 +114,10 @@ export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
     }
   };
 
+  const handleTemplateCreated = () => {
+    refetchTemplates();
+  };
+
   const userName = profile?.full_name || user?.user_metadata?.full_name || "Your Name";
   const companyName = profile?.company_name || "Your Company";
 
@@ -122,10 +128,11 @@ export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
           <h2 className="text-2xl font-bold text-slate-900">Message Templates</h2>
           <p className="text-slate-600">Create and manage your outreach message templates</p>
         </div>
-        <Button className="flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Create Template</span>
-        </Button>
+        <CreateTemplateDialog 
+          user={user} 
+          onTemplateCreated={handleTemplateCreated}
+          buttonText="Create Template"
+        />
       </div>
 
       {templates.length === 0 ? (
@@ -136,7 +143,11 @@ export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
             <p className="text-slate-600 text-center mb-4">
               Create your first message template to start personalizing your outreach campaigns.
             </p>
-            <Button>Create Your First Template</Button>
+            <CreateTemplateDialog 
+              user={user} 
+              onTemplateCreated={handleTemplateCreated}
+              buttonText="Create Your First Template"
+            />
           </CardContent>
         </Card>
       ) : (
@@ -171,9 +182,12 @@ export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
                   {currentTemplates.length === 0 ? (
                     <div className="text-center py-6">
                       <p className="text-slate-500 text-sm">No templates in this category</p>
-                      <Button variant="ghost" size="sm" className="mt-2">
-                        Create First Template
-                      </Button>
+                      <CreateTemplateDialog 
+                        user={user} 
+                        onTemplateCreated={handleTemplateCreated}
+                        buttonText="Create First Template"
+                        variant="ghost"
+                      />
                     </div>
                   ) : (
                     currentTemplates.map((template) => (
@@ -305,24 +319,24 @@ export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
                     <div className="space-y-2">
                       <h4 className="font-medium text-blue-100">Contact Info</h4>
                       <div className="space-y-1 text-sm">
-                        <code className="bg-blue-700 px-2 py-1 rounded">{'{{firstName}}'}</code>
-                        <code className="bg-blue-700 px-2 py-1 rounded">{'{{lastName}}'}</code>
-                        <code className="bg-blue-700 px-2 py-1 rounded">{'{{title}}'}</code>
+                        <code className="bg-blue-700 px-2 py-1 rounded">{"{{firstName}}"}</code>
+                        <code className="bg-blue-700 px-2 py-1 rounded">{"{{lastName}}"}</code>
+                        <code className="bg-blue-700 px-2 py-1 rounded">{"{{title}}"}</code>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <h4 className="font-medium text-blue-100">Company Info</h4>
                       <div className="space-y-1 text-sm">
-                        <code className="bg-blue-700 px-2 py-1 rounded">{'{{company}}'}</code>
-                        <code className="bg-blue-700 px-2 py-1 rounded">{'{{industry}}'}</code>
-                        <code className="bg-blue-700 px-2 py-1 rounded">{'{{location}}'}</code>
+                        <code className="bg-blue-700 px-2 py-1 rounded">{"{{company}}"}</code>
+                        <code className="bg-blue-700 px-2 py-1 rounded">{"{{industry}}"}</code>
+                        <code className="bg-blue-700 px-2 py-1 rounded">{"{{location}}"}</code>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <h4 className="font-medium text-blue-100">Your Info</h4>
                       <div className="space-y-1 text-sm">
-                        <code className="bg-blue-700 px-2 py-1 rounded">{'{{yourName}}'}</code>
-                        <code className="bg-blue-700 px-2 py-1 rounded">{'{{yourCompany}}'}</code>
+                        <code className="bg-blue-700 px-2 py-1 rounded">{"{{yourName}}"}</code>
+                        <code className="bg-blue-700 px-2 py-1 rounded">{"{{yourCompany}}"}</code>
                       </div>
                     </div>
                   </div>
