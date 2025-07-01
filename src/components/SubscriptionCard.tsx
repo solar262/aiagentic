@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Zap, Users, BarChart3, Settings } from "lucide-react";
+import { Check, Crown, Zap, Users, BarChart3, Settings, Sparkles } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 
 export const SubscriptionCard = () => {
@@ -18,6 +18,7 @@ export const SubscriptionCard = () => {
       features: [
         "25 LinkedIn connections/month",
         "3 message templates",
+        "10 AI template generations/month",
         "Basic analytics",
         "Email support"
       ],
@@ -32,6 +33,7 @@ export const SubscriptionCard = () => {
       features: [
         "Unlimited connections",
         "Unlimited templates",
+        "100 AI template generations/month",
         "Advanced analytics",
         "Team collaboration (10 users)",
         "Priority support"
@@ -46,6 +48,7 @@ export const SubscriptionCard = () => {
       icon: <Users className="w-5 h-5" />,
       features: [
         "Everything in Pro",
+        "Unlimited AI template generations",
         "Team collaboration (50 users)",
         "White-label branding",
         "API access",
@@ -101,7 +104,10 @@ export const SubscriptionCard = () => {
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-center text-sm">
                     <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
-                    {feature}
+                    <span className={feature.includes('AI template') ? 'flex items-center' : ''}>
+                      {feature}
+                      {feature.includes('AI template') && <Sparkles className="w-3 h-3 ml-1 text-purple-500" />}
+                    </span>
                   </li>
                 ))}
               </ul>

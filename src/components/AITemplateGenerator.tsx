@@ -1,13 +1,15 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Wand2, Target, TrendingUp } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Sparkles, Wand2, Target, TrendingUp, Lock, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AITemplateGeneratorProps {
@@ -20,9 +22,75 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
   const [targetIndustry, setTargetIndustry] = useState("");
   const [targetTitle, setTargetTitle] = useState("");
   const [templateType, setTemplateType] = useState("connection_request");
+  const [currentUsage, setCurrentUsage] = useState(0);
   const { toast } = useToast();
+  const { max_ai_templates, subscription_tier, createCheckout } = useSubscription();
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchCurrentUsage();
+    }
+  }, [user]);
+
+  const fetchCurrentUsage = async () => {
+    try {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const { data } = await supabase
+        .from('usage_tracking')
+        .select('ai_templates_generated')
+        .eq('user_id', user.id)
+        .eq('month_year', currentMonth)
+        .single();
+      
+      setCurrentUsage(data?.ai_templates_generated || 0);
+    } catch (error) {
+      console.error('Error fetching AI usage:', error);
+    }
+  };
+
+  const canGenerateTemplate = async () => {
+    if (!user?.id) return false;
+    
+    try {
+      const { data, error } = await supabase.rpc('can_generate_ai_template', {
+        user_uuid: user.id
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error checking generation limits:', error);
+      return false;
+    }
+  };
+
+  const incrementUsage = async () => {
+    if (!user?.id) return;
+    
+    try {
+      await supabase.rpc('increment_ai_template_usage', {
+        user_uuid: user.id
+      });
+      
+      // Update local usage count
+      setCurrentUsage(prev => prev + 1);
+    } catch (error) {
+      console.error('Error incrementing usage:', error);
+    }
+  };
 
   const quickGenerate = async (preset: { industry: string; title: string; type: string }) => {
+    const canGenerate = await canGenerateTemplate();
+    
+    if (!canGenerate) {
+      toast({
+        title: "AI Generation Limit Reached",
+        description: `You've reached your monthly limit of ${max_ai_templates} AI templates. Upgrade to generate more.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(true);
     
     try {
@@ -52,6 +120,9 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
         });
 
       if (error) throw error;
+
+      // Increment usage counter
+      await incrementUsage();
 
       toast({
         title: "Smart Template Created!",
@@ -113,6 +184,9 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
     { industry: "Consulting", title: "People Operations Lead", type: "booking_request", icon: "💼" },
   ];
 
+  const isAtLimit = max_ai_templates !== -1 && currentUsage >= max_ai_templates;
+  const usagePercentage = max_ai_templates === -1 ? 0 : Math.min((currentUsage / max_ai_templates) * 100, 100);
+
   return (
     <div className="space-y-6">
       <Card className="bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
@@ -126,6 +200,36 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Usage Tracking */}
+          <div className="bg-white/70 p-4 rounded-lg border">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
+                <span>AI Generation Usage</span>
+              </h4>
+              <Badge variant={isAtLimit ? "destructive" : "secondary"}>
+                {currentUsage} / {max_ai_templates === -1 ? '∞' : max_ai_templates}
+              </Badge>
+            </div>
+            {max_ai_templates !== -1 && (
+              <Progress value={usagePercentage} className="h-2 mb-2" />
+            )}
+            <p className="text-sm text-muted-foreground">
+              {max_ai_templates === -1 ? 'Unlimited AI generations' : 
+               isAtLimit ? 'Monthly limit reached - upgrade to generate more' : 
+               `${max_ai_templates - currentUsage} generations remaining this month`}
+            </p>
+            {isAtLimit && subscription_tier === 'free' && (
+              <Button
+                size="sm"
+                onClick={() => createCheckout('pro')}
+                className="mt-2"
+              >
+                Upgrade for More AI Templates
+              </Button>
+            )}
+          </div>
+
           {/* Quick Generate Section */}
           <div>
             <h3 className="font-medium mb-3 flex items-center space-x-2">
@@ -148,14 +252,19 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
                       size="sm"
                       className="w-full"
                       onClick={() => quickGenerate(target)}
-                      disabled={isGenerating}
+                      disabled={isGenerating || isAtLimit}
                     >
-                      {isGenerating ? (
+                      {isAtLimit ? (
+                        <>
+                          <Lock className="w-3 h-3 mr-1" />
+                          Limit Reached
+                        </>
+                      ) : isGenerating ? (
                         <Sparkles className="w-3 h-3 mr-1 animate-spin" />
                       ) : (
                         <Wand2 className="w-3 h-3 mr-1" />
                       )}
-                      Generate
+                      {isAtLimit ? 'Upgrade' : 'Generate'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -177,6 +286,7 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
                   value={targetIndustry}
                   onChange={(e) => setTargetIndustry(e.target.value)}
                   placeholder="e.g., Technology, Healthcare"
+                  disabled={isAtLimit}
                 />
               </div>
               <div>
@@ -186,11 +296,12 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
                   value={targetTitle}
                   onChange={(e) => setTargetTitle(e.target.value)}
                   placeholder="e.g., CHRO, HR Director"
+                  disabled={isAtLimit}
                 />
               </div>
               <div>
                 <Label htmlFor="custom-type">Template Type</Label>
-                <Select value={templateType} onValueChange={setTemplateType}>
+                <Select value={templateType} onValueChange={setTemplateType} disabled={isAtLimit}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -205,11 +316,16 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
               </div>
             </div>
             <Button
-              className="mt-4 w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              onClick={generateCustomTemplate}
-              disabled={isGenerating || !targetIndustry || !targetTitle}
+              className={`mt-4 w-full ${isAtLimit ? 'bg-orange-600 hover:bg-orange-700' : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'}`}
+              onClick={isAtLimit ? () => createCheckout('pro') : generateCustomTemplate}
+              disabled={isGenerating || (!isAtLimit && (!targetIndustry || !targetTitle))}
             >
-              {isGenerating ? (
+              {isAtLimit ? (
+                <>
+                  <Lock className="w-4 h-4 mr-2" />
+                  Upgrade to Generate More
+                </>
+              ) : isGenerating ? (
                 <>
                   <Sparkles className="w-4 h-4 mr-2 animate-spin" />
                   Generating Custom Template...

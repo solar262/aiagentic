@@ -651,6 +651,7 @@ export type Database = {
       }
       usage_tracking: {
         Row: {
+          ai_templates_generated: number | null
           connections_used: number | null
           created_at: string
           id: string
@@ -662,6 +663,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          ai_templates_generated?: number | null
           connections_used?: number | null
           created_at?: string
           id?: string
@@ -673,6 +675,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          ai_templates_generated?: number | null
           connections_used?: number | null
           created_at?: string
           id?: string
@@ -849,6 +852,10 @@ export type Database = {
         Args: { prospect_uuid: string }
         Returns: number
       }
+      can_generate_ai_template: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       can_user_perform_action: {
         Args: { user_uuid: string; action_type: string }
         Returns: boolean
@@ -866,6 +873,7 @@ export type Database = {
         Returns: {
           max_connections: number
           max_templates: number
+          max_ai_templates: number
           requires_verification: boolean
         }[]
       }
@@ -879,6 +887,10 @@ export type Database = {
           has_advanced_analytics: boolean
           has_api_access: boolean
         }[]
+      }
+      increment_ai_template_usage: {
+        Args: { user_uuid: string }
+        Returns: undefined
       }
     }
     Enums: {

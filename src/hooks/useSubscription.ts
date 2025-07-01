@@ -10,6 +10,7 @@ interface SubscriptionInfo {
   loading: boolean;
   max_connections: number;
   max_templates: number;
+  max_ai_templates: number;
   requires_verification: boolean;
 }
 
@@ -21,6 +22,7 @@ export const useSubscription = () => {
     loading: true,
     max_connections: 25,
     max_templates: 3,
+    max_ai_templates: 10,
     requires_verification: false,
   });
   const { toast } = useToast();
@@ -39,7 +41,7 @@ export const useSubscription = () => {
         console.error('Subscription check error:', subError);
       }
 
-      // Get adjusted usage limits (includes verification status)
+      // Get adjusted usage limits (includes AI template limits)
       const { data: limitsData, error: limitsError } = await supabase.rpc('get_adjusted_usage_limits', {
         user_uuid: user.id
       });
@@ -57,6 +59,7 @@ export const useSubscription = () => {
         loading: false,
         max_connections: limits?.max_connections || 25,
         max_templates: limits?.max_templates || 3,
+        max_ai_templates: limits?.max_ai_templates || 10,
         requires_verification: limits?.requires_verification || false,
       });
 

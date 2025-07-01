@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, MessageSquare, FileText, BarChart3, AlertTriangle } from "lucide-react";
+import { Users, MessageSquare, FileText, BarChart3, AlertTriangle, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 
@@ -12,9 +12,11 @@ interface UsageData {
   connections_used: number;
   messages_sent: number;
   templates_created: number;
+  ai_templates_generated: number;
   reports_generated: number;
   max_connections: number;
   max_templates: number;
+  max_ai_templates: number;
   max_team_members: number;
 }
 
@@ -52,33 +54,43 @@ export const UsageDashboard = ({ user }: { user: any }) => {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
-      // Set default limits based on subscription tier
-      let limits = {
+      // Get adjusted limits (includes AI template limits)
+      const { data: limitsData } = await supabase.rpc('get_adjusted_usage_limits', {
+        user_uuid: user.id
+      });
+
+      const limits = limitsData && limitsData.length > 0 ? limitsData[0] : null;
+
+      // Set default limits if no data
+      const defaultLimits = {
         max_connections: 25,
         max_templates: 3,
+        max_ai_templates: 10,
         max_team_members: 1
       };
 
       if (subscription_tier === 'pro') {
-        limits = {
-          max_connections: -1, // Unlimited
-          max_templates: -1, // Unlimited
-          max_team_members: 10
-        };
+        defaultLimits.max_connections = -1; // Unlimited
+        defaultLimits.max_templates = -1; // Unlimited
+        defaultLimits.max_ai_templates = 100;
+        defaultLimits.max_team_members = 10;
       } else if (subscription_tier === 'enterprise') {
-        limits = {
-          max_connections: -1, // Unlimited
-          max_templates: -1, // Unlimited
-          max_team_members: 50
-        };
+        defaultLimits.max_connections = -1; // Unlimited
+        defaultLimits.max_templates = -1; // Unlimited
+        defaultLimits.max_ai_templates = -1; // Unlimited
+        defaultLimits.max_team_members = 50;
       }
 
       setUsage({
         connections_used: usageData?.connections_used || 0,
         messages_sent: usageData?.messages_sent || 0,
         templates_created: templateCount || 0,
+        ai_templates_generated: usageData?.ai_templates_generated || 0,
         reports_generated: usageData?.reports_generated || 0,
-        ...limits
+        max_connections: limits?.max_connections || defaultLimits.max_connections,
+        max_templates: limits?.max_templates || defaultLimits.max_templates,
+        max_ai_templates: limits?.max_ai_templates || defaultLimits.max_ai_templates,
+        max_team_members: defaultLimits.max_team_members
       });
     } catch (error) {
       console.error('Error fetching usage data:', error);
@@ -130,6 +142,12 @@ export const UsageDashboard = ({ user }: { user: any }) => {
       used: usage.templates_created,
       max: usage.max_templates,
       icon: <FileText className="w-5 h-5" />,
+    },
+    {
+      label: "AI Templates Generated",
+      used: usage.ai_templates_generated,
+      max: usage.max_ai_templates,
+      icon: <Sparkles className="w-5 h-5" />,
     },
     {
       label: "Messages Sent",
@@ -193,7 +211,7 @@ export const UsageDashboard = ({ user }: { user: any }) => {
                 <div className="flex-1">
                   <h4 className="font-medium text-blue-900">Upgrade for unlimited access</h4>
                   <p className="text-sm text-blue-700 mt-1">
-                    Get unlimited connections, templates, and advanced features with our Pro plan.
+                    Get unlimited connections, templates, 100 AI generations per month, and advanced features with our Pro plan.
                   </p>
                   <Button 
                     onClick={() => createCheckout('pro')} 
