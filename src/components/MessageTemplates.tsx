@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ interface MessageTemplatesProps {
 }
 
 export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
-  const [activeCategory, setActiveCategory] = useState("connection");
+  const [activeCategory, setActiveCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedMessage, setEditedMessage] = useState("");
@@ -69,15 +70,16 @@ export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
     enabled: !!user?.id
   });
 
-  // Group templates by type - map database types to UI categories
+  // Group templates by type - simplified approach
   const messageTemplates = {
+    all: templates,
     connection: templates.filter(t => t.type === 'connection_request'),
-    followUp: templates.filter(t => t.type === 'follow_up' || t.type === 'value_add' || t.type === 're_engagement'),
+    followUp: templates.filter(t => ['follow_up', 'value_add', 're_engagement'].includes(t.type)),
     nurture: templates.filter(t => t.type === 'booking_request')
   };
 
   // Set default selected template
-  const currentTemplates = messageTemplates[activeCategory as keyof typeof messageTemplates];
+  const currentTemplates = messageTemplates[activeCategory as keyof typeof messageTemplates] || [];
   const defaultTemplate = selectedTemplate || currentTemplates[0];
 
   const handleCopyTemplate = (template: any) => {
@@ -189,7 +191,11 @@ export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
                 </CardHeader>
                 <CardContent>
                   <Tabs value={activeCategory} onValueChange={setActiveCategory} orientation="vertical">
-                    <TabsList className="grid w-full grid-rows-3">
+                    <TabsList className="grid w-full grid-rows-4">
+                      <TabsTrigger value="all" className="flex items-center space-x-2">
+                        <MessageSquare className="w-4 h-4" />
+                        <span>All ({messageTemplates.all.length})</span>
+                      </TabsTrigger>
                       <TabsTrigger value="connection" className="flex items-center space-x-2">
                         <Users className="w-4 h-4" />
                         <span>Connection ({messageTemplates.connection.length})</span>
@@ -243,7 +249,7 @@ export const MessageTemplates = ({ user }: MessageTemplatesProps) => {
                                 )}
                               </div>
                             </div>
-                            <p className="text-xs text-slate-600 mb-2 capitalize">{template.type.replace('_', ' ')}</p>
+                            <p className="text-xs text-slate-600 mb-2 capitalize">{template.type?.replace('_', ' ')}</p>
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-slate-500">Used {template.times_used || 0} times</span>
                             </div>
