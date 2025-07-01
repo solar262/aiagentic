@@ -150,7 +150,7 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
 
       console.log('Generated template data:', { templateName, subject, content });
       
-      // Save the generated template (only for valid users)
+      // Save the generated template (only for valid users with real UUIDs)
       if (isValidUser) {
         console.log('Saving template to database for user:', user.id);
         
@@ -176,16 +176,31 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
 
         // Increment usage counter
         await incrementUsage();
+        
+        toast({
+          title: "✨ Template Generated & Saved!",
+          description: `"${templateName}" has been created and saved to your templates. Click "My Templates" tab to view it.`,
+          duration: 8000,
+        });
       } else {
-        // For demo users, just increment locally
+        // For demo users, show the template content directly and increment locally
         setCurrentUsage(prev => prev + 1);
+        
+        toast({
+          title: "✨ Template Generated!",
+          description: (
+            <div className="space-y-2">
+              <p className="font-medium">{templateName}</p>
+              <div className="text-sm bg-gray-100 p-2 rounded max-h-32 overflow-y-auto">
+                <p className="font-semibold">Subject: {subject}</p>
+                <p className="mt-1">{content}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">Sign in with a real account to save templates permanently.</p>
+            </div>
+          ),
+          duration: 12000,
+        });
       }
-
-      toast({
-        title: "✨ Template Generated Successfully!",
-        description: `"${templateName}" has been created and ${isValidUser ? 'saved to your templates' : 'is ready to use'}. Switch to "My Templates" tab to view it.`,
-        duration: 8000,
-      });
 
       if (onTemplateCreated) {
         onTemplateCreated();
@@ -277,6 +292,11 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
                isAtLimit ? 'Monthly limit reached - upgrade to generate more' : 
                `${max_ai_templates - currentUsage} generations remaining this month`}
             </p>
+            {!isValidUser && (
+              <p className="text-xs text-orange-600 mt-1">
+                Demo mode: Templates shown in notifications only. Sign in to save permanently.
+              </p>
+            )}
             {isAtLimit && subscription_tier === 'free' && (
               <Button
                 size="sm"
