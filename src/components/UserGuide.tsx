@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Book, ChevronRight, Home, HelpCircle, Wrench, CheckSquare, Settings, Users, MessageSquare, Target, Calendar, BarChart } from 'lucide-react';
+import { Book, ChevronRight, Home, HelpCircle, Wrench, CheckSquare, Settings, Users, MessageSquare, Target, Calendar, BarChart, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,7 +12,7 @@ import { SetupVerification } from './user-guide/SetupVerification';
 import { Troubleshooting } from './user-guide/Troubleshooting';
 import { AccountManagement } from './user-guide/AccountManagement';
 
-type GuideSection = 'overview' | 'getting-started' | 'dashboard' | 'prospects' | 'templates' | 'campaigns' | 'calendar' | 'analytics' | 'settings' | 'setup-verification' | 'faq' | 'troubleshooting' | 'account-management';
+type GuideSection = 'overview' | 'getting-started' | 'dashboard' | 'prospects' | 'templates' | 'ai-templates' | 'campaigns' | 'calendar' | 'analytics' | 'settings' | 'setup-verification' | 'faq' | 'troubleshooting' | 'account-management';
 
 const UserGuide = () => {
   const [activeSection, setActiveSection] = useState<GuideSection>('overview');
@@ -25,6 +24,7 @@ const UserGuide = () => {
     { key: 'dashboard' as const, label: 'Dashboard', icon: BarChart },
     { key: 'prospects' as const, label: 'Managing Prospects', icon: Users },
     { key: 'templates' as const, label: 'Message Templates', icon: MessageSquare },
+    { key: 'ai-templates' as const, label: 'AI Template Generator', icon: Sparkles },
     { key: 'campaigns' as const, label: 'Campaign Management', icon: Target },
     { key: 'calendar' as const, label: 'Calendar Integration', icon: Calendar },
     { key: 'analytics' as const, label: 'Analytics & Reporting', icon: BarChart },
@@ -46,6 +46,141 @@ const UserGuide = () => {
         return <Troubleshooting />;
       case 'account-management':
         return <AccountManagement />;
+      case 'ai-templates':
+        return (
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">AI Template Generator</h2>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="ai-overview">
+                <AccordionTrigger>What is AI Template Generation?</AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4">
+                    <p>Our AI Template Generator uses advanced AI to create personalized LinkedIn outreach templates based on your target audience, industry, and value proposition.</p>
+                    
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h4 className="font-medium mb-2">Key Benefits:</h4>
+                      <ul className="list-disc pl-6 space-y-1">
+                        <li>Generate industry-specific templates in seconds</li>
+                        <li>Personalized messaging for different job titles</li>
+                        <li>Higher response rates with AI-optimized content</li>
+                        <li>Save hours of manual template creation</li>
+                      </ul>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="ai-limits">
+                <AccordionTrigger>AI Template Generation Limits</AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4">
+                    <p>AI template generation is subject to monthly limits based on your subscription tier:</p>
+                    
+                    <div className="grid gap-4">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="w-3 h-3 bg-gray-400 rounded-full"></span>
+                          <h4 className="font-medium">Free Tier</h4>
+                        </div>
+                        <ul className="text-sm space-y-1">
+                          <li>• 10 AI template generations per month</li>
+                          <li>• 2 AI templates for unverified accounts</li>
+                          <li>• Access to all template types</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="w-3 h-3 bg-blue-400 rounded-full"></span>
+                          <h4 className="font-medium">Pro Tier</h4>
+                        </div>
+                        <ul className="text-sm space-y-1">
+                          <li>• 100 AI template generations per month</li>
+                          <li>• Priority AI processing</li>
+                          <li>• Advanced template customization</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-purple-50 p-4 rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="w-3 h-3 bg-purple-400 rounded-full"></span>
+                          <h4 className="font-medium">Enterprise Tier</h4>
+                        </div>
+                        <ul className="text-sm space-y-1">
+                          <li>• Unlimited AI template generations</li>
+                          <li>• Custom AI training for your brand</li>
+                          <li>• White-label template options</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+                      <h4 className="font-medium text-yellow-800 mb-2">Usage Reset</h4>
+                      <p className="text-sm text-yellow-700">
+                        AI template generation limits reset on the 1st of each month. Monitor your usage in the dashboard to avoid interruptions.
+                      </p>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="ai-usage">
+                <AccordionTrigger>How to Use AI Template Generator</AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Step-by-Step Process:</h4>
+                      <ol className="list-decimal pl-6 space-y-2">
+                        <li><strong>Select Template Type:</strong> Choose from connection requests, follow-ups, or meeting requests</li>
+                        <li><strong>Define Target Audience:</strong> Specify industry and job titles you're targeting</li>
+                        <li><strong>Add Your Value Proposition:</strong> Describe what you offer and how you help</li>
+                        <li><strong>Generate Template:</strong> Click generate and receive a personalized template</li>
+                        <li><strong>Review and Edit:</strong> Customize the generated template to match your voice</li>
+                        <li><strong>Save and Use:</strong> Add to your template library for campaigns</li>
+                      </ol>
+                    </div>
+
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-green-800 mb-2">Pro Tips:</h4>
+                      <ul className="list-disc pl-6 space-y-1 text-sm text-green-700">
+                        <li>Be specific about your target industry for better results</li>
+                        <li>Include concrete benefits in your value proposition</li>
+                        <li>Test different variations to find what works best</li>
+                        <li>Always personalize the generated templates further</li>
+                      </ul>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="ai-monitoring">
+                <AccordionTrigger>Monitoring AI Template Usage</AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4">
+                    <p>Track your AI template generation usage in the Usage Dashboard:</p>
+                    
+                    <div>
+                      <h4 className="font-medium mb-2">Dashboard Features:</h4>
+                      <ul className="list-disc pl-6 space-y-1">
+                        <li>Real-time usage tracking with progress bars</li>
+                        <li>Monthly limit status for each subscription tier</li>
+                        <li>Alerts when approaching or reaching limits</li>
+                        <li>Historical usage data and trends</li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
+                      <h4 className="font-medium text-red-800 mb-2">Limit Reached?</h4>
+                      <p className="text-sm text-red-700">
+                        When you reach your monthly AI template limit, you'll see upgrade prompts. Consider upgrading to Pro or Enterprise for higher limits.
+                      </p>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        );
       case 'overview':
         return (
           <div>
@@ -54,7 +189,7 @@ const UserGuide = () => {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border">
                 <h3 className="text-lg font-semibold text-blue-900 mb-2">What is LeadGen Pro?</h3>
                 <p className="text-blue-800">
-                  LeadGen Pro is an intelligent LinkedIn outreach automation platform that helps you find, connect with, and nurture high-quality prospects at scale. Our platform combines powerful prospect discovery, personalized messaging, and comprehensive analytics to turn your LinkedIn presence into a lead generation machine.
+                  LeadGen Pro is an intelligent LinkedIn outreach automation platform that helps you find, connect with, and nurture high-quality prospects at scale. Our platform combines powerful prospect discovery, personalized messaging, AI-powered template generation, and comprehensive analytics to turn your LinkedIn presence into a lead generation machine.
                 </p>
               </div>
 
@@ -66,6 +201,7 @@ const UserGuide = () => {
                   <CardContent>
                     <ul className="space-y-2 text-sm">
                       <li>• Automated LinkedIn connection requests</li>
+                      <li>• AI-powered template generation</li>
                       <li>• Personalized follow-up sequences</li>
                       <li>• Advanced prospect discovery and filtering</li>
                       <li>• Calendar integration for seamless booking</li>
@@ -85,6 +221,7 @@ const UserGuide = () => {
                       <li>• Save 10+ hours per week on outreach</li>
                       <li>• Increase connection rates by 300%</li>
                       <li>• Generate 5-15 qualified leads monthly</li>
+                      <li>• Create templates in seconds with AI</li>
                       <li>• Maintain consistent brand messaging</li>
                       <li>• Track ROI with detailed analytics</li>
                       <li>• Scale outreach without scaling effort</li>
@@ -125,6 +262,16 @@ const UserGuide = () => {
                     </div>
 
                     <div>
+                      <h4 className="font-medium mb-2">Usage Overview:</h4>
+                      <ul className="list-disc pl-6 space-y-1">
+                        <li><strong>LinkedIn Connections:</strong> Monthly connection request usage vs limits</li>
+                        <li><strong>Message Templates:</strong> Total templates created vs tier limits</li>
+                        <li><strong>AI Templates Generated:</strong> Monthly AI generation usage with progress tracking</li>
+                        <li><strong>Messages Sent:</strong> Total outreach messages sent</li>
+                      </ul>
+                    </div>
+
+                    <div>
                       <h4 className="font-medium mb-2">Activity Timeline:</h4>
                       <p>View recent campaign activities, new connections, responses, and system notifications in chronological order.</p>
                     </div>
@@ -134,6 +281,7 @@ const UserGuide = () => {
                       <ul className="list-disc pl-6 space-y-1">
                         <li>Add new prospects</li>
                         <li>Create new campaigns</li>
+                        <li>Generate AI templates</li>
                         <li>View pending messages</li>
                         <li>Access recent conversations</li>
                       </ul>
@@ -225,6 +373,45 @@ const UserGuide = () => {
           <div>
             <h2 className="text-2xl font-semibold mb-4">Message Templates</h2>
             <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="template-creation">
+                <AccordionTrigger>Creating Templates</AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Manual Template Creation:</h4>
+                      <ol className="list-decimal pl-6 space-y-1">
+                        <li>Go to Templates section</li>
+                        <li>Click "Create Template" button</li>
+                        <li>Choose template type (connection, follow-up, meeting)</li>
+                        <li>Write your message using variables for personalization</li>
+                        <li>Test and save your template</li>
+                      </ol>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium mb-2">AI-Powered Template Generation:</h4>
+                      <ol className="list-decimal pl-6 space-y-1">
+                        <li>Click "Generate with AI" button</li>
+                        <li>Select your target industry and job title</li>
+                        <li>Describe your value proposition</li>
+                        <li>Let AI create a personalized template</li>
+                        <li>Review, edit, and save the generated template</li>
+                      </ol>
+                    </div>
+
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-purple-800 mb-2">AI Template Benefits:</h4>
+                      <ul className="list-disc pl-6 space-y-1 text-sm text-purple-700">
+                        <li>Industry-specific messaging that resonates</li>
+                        <li>Higher response rates through AI optimization</li>
+                        <li>Saves hours of manual writing time</li>
+                        <li>Consistent professional tone</li>
+                      </ul>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
               <AccordionItem value="template-variables">
                 <AccordionTrigger>Using Template Variables</AccordionTrigger>
                 <AccordionContent>
