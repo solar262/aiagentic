@@ -82,6 +82,13 @@ export const ProspectInteractionDemo = ({ user }: ProspectInteractionDemoProps) 
     }
   };
 
+  const handleAddProspect = () => {
+    toast({
+      title: "Navigate to Prospect Discovery",
+      description: "Go to the Prospect Discovery section to add prospects to your pipeline.",
+    });
+  };
+
   if (!prospects || prospects.length === 0) {
     return (
       <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
@@ -97,7 +104,7 @@ export const ProspectInteractionDemo = ({ user }: ProspectInteractionDemoProps) 
         <CardContent>
           <div className="text-center py-8">
             <p className="text-slate-600 mb-4">Start by adding prospects to your pipeline</p>
-            <Button>
+            <Button onClick={handleAddProspect}>
               <Plus className="w-4 h-4 mr-2" />
               Add Prospect
             </Button>
