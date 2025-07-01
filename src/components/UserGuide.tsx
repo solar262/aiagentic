@@ -234,22 +234,22 @@ const UserGuide = () => {
                     <div className="bg-gray-50 p-4 rounded">
                       <h4 className="font-medium mb-2">Available Variables:</h4>
                       <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div><code>{{firstName}}</code> - Prospect's first name</div>
-                        <div><code>{{lastName}}</code> - Prospect's last name</div>
-                        <div><code>{{fullName}}</code> - Complete name</div>
-                        <div><code>{{company}}</code> - Company name</div>
-                        <div><code>{{jobTitle}}</code> - Job title</div>
-                        <div><code>{{industry}}</code> - Industry</div>
-                        <div><code>{{location}}</code> - Location</div>
-                        <div><code>{{customField1}}</code> - Custom field 1</div>
+                        <div><code>{"{{firstName}}"}</code> - Prospect's first name</div>
+                        <div><code>{"{{lastName}}"}</code> - Prospect's last name</div>
+                        <div><code>{"{{fullName}}"}</code> - Complete name</div>
+                        <div><code>{"{{company}}"}</code> - Company name</div>
+                        <div><code>{"{{jobTitle}}"}</code> - Job title</div>
+                        <div><code>{"{{industry}}"}</code> - Industry</div>
+                        <div><code>{"{{location}}"}</code> - Location</div>
+                        <div><code>{"{{customField1}}"}</code> - Custom field 1</div>
                       </div>
                     </div>
 
                     <div className="bg-blue-50 p-4 rounded">
                       <h4 className="font-medium mb-2">Example Template:</h4>
                       <p className="text-sm italic">
-                        "Hi {{firstName}}, I noticed you work at {{company}} as a {{jobTitle}}. 
-                        I help companies in {{industry}} increase their sales efficiency. 
+                        "Hi {"{{firstName}}"}, I noticed you work at {"{{company}}"} as a {"{{jobTitle}}"}. 
+                        I help companies in {"{{industry}}"} increase their sales efficiency. 
                         Would you be open to a brief conversation?"
                       </p>
                     </div>
@@ -392,7 +392,7 @@ const UserGuide = () => {
                     <div className="bg-green-50 p-4 rounded">
                       <h4 className="font-medium text-green-800 mb-2">Pro Tip:</h4>
                       <p className="text-sm text-green-700">
-                        Include your booking link in message templates using the variable <code>{{bookingLink}}</code> to streamline the meeting scheduling process.
+                        Include your booking link in message templates using the variable <code>{"{{bookingLink}}"}</code> to streamline the meeting scheduling process.
                       </p>
                     </div>
                   </div>

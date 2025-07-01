@@ -81,7 +81,7 @@ export const SetupVerification = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Templates use variables ({{firstName}}, {{company}})</span>
+                    <span>Templates use variables ({"{{firstName}}"}, {"{{company}}"})</span>
                   </div>
                 </div>
               </div>

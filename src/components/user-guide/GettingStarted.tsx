@@ -55,17 +55,17 @@ export const GettingStarted = () => {
           <AccordionContent>
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                Templates save you time and ensure consistent messaging. You can use variables like <code>{{firstName}}</code> for personalization.
+                Templates save you time and ensure consistent messaging. You can use variables like <code>{"{{firstName}}"}</code> for personalization.
               </p>
 
               <div>
                 <h4 className="font-medium mb-2">Quick Template Examples:</h4>
                 <div className="bg-gray-50 p-3 rounded text-sm">
                   <p><strong>Connection Request:</strong></p>
-                  <p className="italic">"Hi {{firstName}}, I noticed we both work in {{industry}}. Would love to connect and share insights!"</p>
+                  <p className="italic">"Hi {"{{firstName}}"}, I noticed we both work in {"{{industry}}"}. Would love to connect and share insights!"</p>
                   
                   <p className="mt-3"><strong>Follow-up Message:</strong></p>
-                  <p className="italic">"Thanks for connecting, {{firstName}}! I help {{company}} companies like {{companyName}} with [your service]. Would you be open to a quick chat this week?"</p>
+                  <p className="italic">"Thanks for connecting, {"{{firstName}}"}! I help {"{{company}}"} companies like {"{{companyName}}"} with [your service]. Would you be open to a quick chat this week?"</p>
                 </div>
               </div>
 

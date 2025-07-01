@@ -21,7 +21,7 @@ import { ActivityDashboard } from "./ActivityDashboard";
 import { LeadPipeline } from "./LeadPipeline";
 import { MessageTemplates } from "./MessageTemplates";
 import { CalendarIntegration } from "./CalendarIntegration";
-import { UserGuide } from "./UserGuide";
+import UserGuide from "./UserGuide";
 import { Settings as SettingsComponent } from "./Settings";
 import { CampaignManagement } from "./CampaignManagement";
 import { UsageDashboard } from "./UsageDashboard";
