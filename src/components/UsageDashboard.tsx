@@ -195,7 +195,11 @@ export const UsageDashboard = ({ user }: { user: any }) => {
                   <p className="text-sm text-blue-700 mt-1">
                     Get unlimited connections, templates, and advanced features with our Pro plan.
                   </p>
-                  <Button onClick={() => createCheckout('pro')} className="mt-3" size="sm">
+                  <Button 
+                    onClick={() => createCheckout('pro')} 
+                    className="mt-3" 
+                    size="sm"
+                  >
                     Upgrade to Pro
                   </Button>
                 </div>
