@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Linkedin, CheckCircle, AlertCircle, Settings, Shield } from "lucide-react";
+import { Linkedin, CheckCircle, AlertCircle, Settings, Shield, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LinkedInConnectorProps {
@@ -209,14 +209,19 @@ export const LinkedInConnector = ({ isConnected, onConnectionChange }: LinkedInC
 
           <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0">
             <CardHeader>
-              <CardTitle>Need Help Setting Up?</CardTitle>
+              <CardTitle>Need Help Getting Started?</CardTitle>
               <CardDescription className="text-blue-100">
-                Our team can help you get started with LinkedIn integration and optimize your outreach strategy.
+                Check out our comprehensive User Guide for step-by-step setup instructions and best practices.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="secondary" className="bg-white text-blue-600 hover:bg-blue-50">
-                Schedule Setup Call
+              <Button 
+                variant="secondary" 
+                className="bg-white text-blue-600 hover:bg-blue-50 w-full flex items-center space-x-2"
+                onClick={() => window.location.hash = '#guide'}
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span>View User Guide</span>
               </Button>
             </CardContent>
           </Card>
