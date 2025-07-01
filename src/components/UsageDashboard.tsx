@@ -24,44 +24,61 @@ export const UsageDashboard = ({ user }: { user: any }) => {
   const { subscription_tier, createCheckout } = useSubscription();
 
   useEffect(() => {
-    fetchUsageData();
+    if (user?.id) {
+      fetchUsageData();
+    }
   }, [user]);
 
   const fetchUsageData = async () => {
     try {
+      if (!user?.id) {
+        console.log('No user ID available');
+        setLoading(false);
+        return;
+      }
+
       // Get current month usage
       const currentMonth = new Date().toISOString().slice(0, 7); // "2024-01" format
       const { data: usageData } = await supabase
         .from('usage_tracking')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .eq('month_year', currentMonth)
         .single();
-
-      // Get subscription limits
-      const { data: limitsData } = await supabase
-        .rpc('get_user_subscription_limits', { user_uuid: user?.id });
 
       // Get template count
       const { count: templateCount } = await supabase
         .from('message_templates')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
-      const limits = limitsData?.[0] || {
+      // Set default limits based on subscription tier
+      let limits = {
         max_connections: 25,
         max_templates: 3,
         max_team_members: 1
       };
+
+      if (subscription_tier === 'pro') {
+        limits = {
+          max_connections: -1, // Unlimited
+          max_templates: -1, // Unlimited
+          max_team_members: 10
+        };
+      } else if (subscription_tier === 'enterprise') {
+        limits = {
+          max_connections: -1, // Unlimited
+          max_templates: -1, // Unlimited
+          max_team_members: 50
+        };
+      }
 
       setUsage({
         connections_used: usageData?.connections_used || 0,
         messages_sent: usageData?.messages_sent || 0,
         templates_created: templateCount || 0,
         reports_generated: usageData?.reports_generated || 0,
-        max_connections: limits.max_connections,
-        max_templates: limits.max_templates,
-        max_team_members: limits.max_team_members,
+        ...limits
       });
     } catch (error) {
       console.error('Error fetching usage data:', error);

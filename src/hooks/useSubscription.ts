@@ -21,12 +21,22 @@ export const useSubscription = () => {
 
   const checkSubscription = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setSubscription(prev => ({ ...prev, loading: false }));
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('check-subscription');
-      if (error) throw error;
+      if (error) {
+        console.error('Subscription check error:', error);
+        setSubscription(prev => ({ ...prev, loading: false }));
+        return;
+      }
       
       setSubscription({
-        subscribed: data.subscribed,
-        subscription_tier: data.subscription_tier,
+        subscribed: data.subscribed || false,
+        subscription_tier: data.subscription_tier || 'free',
         subscription_end: data.subscription_end,
         loading: false,
       });
@@ -38,12 +48,23 @@ export const useSubscription = () => {
 
   const createCheckout = async (planType: 'pro' | 'enterprise') => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to subscribe to a plan.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { planType }
       });
       if (error) throw error;
       
-      window.location.href = data.url;
+      // Open in new tab so user doesn't lose their place
+      window.open(data.url, '_blank');
     } catch (error) {
       console.error('Error creating checkout:', error);
       toast({
@@ -56,10 +77,21 @@ export const useSubscription = () => {
 
   const openCustomerPortal = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to manage your billing.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('customer-portal');
       if (error) throw error;
       
-      window.location.href = data.url;
+      // Open in new tab
+      window.open(data.url, '_blank');
     } catch (error) {
       console.error('Error opening customer portal:', error);
       toast({

@@ -21,13 +21,22 @@ serve(async (req) => {
   try {
     const { planType } = await req.json();
     
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("Authentication required");
+    }
+
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      throw new Error("Stripe not configured. Please add your Stripe secret key.");
+    }
+
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
@@ -60,8 +69,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/dashboard?success=true`,
-      cancel_url: `${req.headers.get("origin")}/dashboard?canceled=true`,
+      success_url: `${req.headers.get("origin")}/billing?success=true`,
+      cancel_url: `${req.headers.get("origin")}/billing?canceled=true`,
       metadata: {
         user_id: user.id,
         plan_type: planType,
@@ -73,6 +82,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    console.error('Error in create-checkout:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

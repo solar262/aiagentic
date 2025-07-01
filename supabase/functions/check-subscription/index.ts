@@ -21,15 +21,58 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ 
+        subscribed: false, 
+        subscription_tier: 'free' 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    if (userError) {
+      console.error('Auth error:', userError);
+      return new Response(JSON.stringify({ 
+        subscribed: false, 
+        subscription_tier: 'free' 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated");
+    if (!user?.email) {
+      return new Response(JSON.stringify({ 
+        subscribed: false, 
+        subscription_tier: 'free' 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    // Check if Stripe is configured
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      console.log('Stripe not configured, returning free tier');
+      await supabaseClient.from("subscribers").upsert({
+        email: user.email,
+        user_id: user.id,
+        subscribed: false,
+        subscription_tier: 'free',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'email' });
+      
+      return new Response(JSON.stringify({ 
+        subscribed: false, 
+        subscription_tier: 'free' 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
@@ -96,7 +139,12 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Error in check-subscription:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      subscribed: false, 
+      subscription_tier: 'free' 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
