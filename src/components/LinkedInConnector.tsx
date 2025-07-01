@@ -124,17 +124,17 @@ export const LinkedInConnector = ({ isConnected, onConnectionChange }: LinkedInC
                   <CheckCircle className="w-8 h-8 text-green-600" />
                   <div>
                     <p className="font-medium text-green-900">Profile Connected</p>
-                    <p className="text-sm text-green-700">Dr. Sharon - People & Culture Consultant</p>
+                    <p className="text-sm text-green-700">Ready to discover HR prospects</p>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-3 bg-slate-50 rounded-lg">
-                    <p className="text-2xl font-bold text-slate-900">1,247</p>
+                    <p className="text-2xl font-bold text-slate-900">-</p>
                     <p className="text-sm text-slate-600">Connections</p>
                   </div>
                   <div className="text-center p-3 bg-slate-50 rounded-lg">
-                    <p className="text-2xl font-bold text-slate-900">847</p>
+                    <p className="text-2xl font-bold text-slate-900">-</p>
                     <p className="text-sm text-slate-600">HR Prospects</p>
                   </div>
                 </div>

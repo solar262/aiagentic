@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { LinkedInConnector } from "./LinkedInConnector";
 import { ProspectDiscovery } from "./ProspectDiscovery";
@@ -33,13 +32,14 @@ interface DashboardProps {
 
 export const Dashboard = ({ user }: DashboardProps) => {
   const [activeSection, setActiveSection] = useState("home");
+  const [isLinkedInConnected, setIsLinkedInConnected] = useState(false);
 
   const renderContent = () => {
     switch (activeSection) {
       case 'home':
         return <ActivityDashboard user={user} />;
       case 'linkedin':
-        return <LinkedInConnector isConnected={true} onConnectionChange={() => {}} />;
+        return <LinkedInConnector isConnected={isLinkedInConnected} onConnectionChange={setIsLinkedInConnected} />;
       case 'prospect':
         return <ProspectDiscovery user={user} />;
       case 'campaign':
@@ -102,6 +102,9 @@ export const Dashboard = ({ user }: DashboardProps) => {
             >
               <Users className="w-4 h-4" />
               <span>LinkedIn Connector</span>
+              {!isLinkedInConnected && (
+                <span className="ml-auto w-2 h-2 bg-red-500 rounded-full"></span>
+              )}
             </button>
 
             <button
