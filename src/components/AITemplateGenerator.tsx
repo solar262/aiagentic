@@ -18,7 +18,7 @@ interface AITemplateGeneratorProps {
 }
 
 export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGeneratorProps) => {
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingStates, setGeneratingStates] = useState<{ [key: string]: boolean }>({});
   const [targetIndustry, setTargetIndustry] = useState("");
   const [targetTitle, setTargetTitle] = useState("");
   const [templateType, setTemplateType] = useState("connection_request");
@@ -112,7 +112,7 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
     }
   };
 
-  const quickGenerate = async (preset: { industry: string; title: string; type: string }) => {
+  const quickGenerate = async (preset: { industry: string; title: string; type: string }, buttonKey: string) => {
     const canGenerate = await canGenerateTemplate();
     
     if (!canGenerate) {
@@ -124,7 +124,7 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
       return;
     }
 
-    setIsGenerating(true);
+    setGeneratingStates(prev => ({ ...prev, [buttonKey]: true }));
     
     try {
       const response = await supabase.functions.invoke('generate-template', {
@@ -164,7 +164,8 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
 
       toast({
         title: "Smart Template Created!",
-        description: `Generated "${templateName}"${isValidUser ? ' and added to your library' : ' (demo mode)'}.`,
+        description: `Generated "${templateName}"${isValidUser ? ' and added to your library' : ' (demo mode)'}. Switch to "My Templates" tab to view it.`,
+        duration: 5000,
       });
 
       if (onTemplateCreated) {
@@ -178,7 +179,7 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
         variant: "destructive",
       });
     } finally {
-      setIsGenerating(false);
+      setGeneratingStates(prev => ({ ...prev, [buttonKey]: false }));
     }
   };
 
@@ -196,7 +197,7 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
       industry: targetIndustry,
       title: targetTitle,
       type: templateType
-    });
+    }, 'custom');
   };
 
   const extractVariables = (text: string): string[] => {
@@ -275,38 +276,48 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
               <span>Popular Targets</span>
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {popularTargets.map((target, index) => (
-                <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow bg-white/70 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-2xl">{target.icon}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {target.type.replace('_', ' ')}
-                      </Badge>
-                    </div>
-                    <p className="font-medium text-sm">{target.title}</p>
-                    <p className="text-xs text-muted-foreground mb-3">{target.industry}</p>
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      onClick={() => quickGenerate(target)}
-                      disabled={isGenerating || isAtLimit}
-                    >
-                      {isAtLimit ? (
-                        <>
-                          <Lock className="w-3 h-3 mr-1" />
-                          Limit Reached
-                        </>
-                      ) : isGenerating ? (
-                        <Sparkles className="w-3 h-3 mr-1 animate-spin" />
-                      ) : (
-                        <Wand2 className="w-3 h-3 mr-1" />
-                      )}
-                      {isAtLimit ? 'Upgrade' : 'Generate'}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+              {popularTargets.map((target, index) => {
+                const buttonKey = `popular-${index}`;
+                const isGenerating = generatingStates[buttonKey];
+                
+                return (
+                  <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow bg-white/70 backdrop-blur-sm">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-2xl">{target.icon}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {target.type.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                      <p className="font-medium text-sm">{target.title}</p>
+                      <p className="text-xs text-muted-foreground mb-3">{target.industry}</p>
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => quickGenerate(target, buttonKey)}
+                        disabled={isGenerating || isAtLimit}
+                      >
+                        {isAtLimit ? (
+                          <>
+                            <Lock className="w-3 h-3 mr-1" />
+                            Limit Reached
+                          </>
+                        ) : isGenerating ? (
+                          <>
+                            <Sparkles className="w-3 h-3 mr-1 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className="w-3 h-3 mr-1" />
+                            Generate
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
 
@@ -356,14 +367,14 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
             <Button
               className={`mt-4 w-full ${isAtLimit ? 'bg-orange-600 hover:bg-orange-700' : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'}`}
               onClick={isAtLimit ? () => createCheckout('pro') : generateCustomTemplate}
-              disabled={isGenerating || (!isAtLimit && (!targetIndustry || !targetTitle))}
+              disabled={generatingStates['custom'] || (!isAtLimit && (!targetIndustry || !targetTitle))}
             >
               {isAtLimit ? (
                 <>
                   <Lock className="w-4 h-4 mr-2" />
                   Upgrade to Generate More
                 </>
-              ) : isGenerating ? (
+              ) : generatingStates['custom'] ? (
                 <>
                   <Sparkles className="w-4 h-4 mr-2 animate-spin" />
                   Generating Custom Template...
