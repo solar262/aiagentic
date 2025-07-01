@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,6 +41,9 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Check if user is authenticated properly
+  const isAuthenticated = user && user.id && user.id !== "demo-user";
+
   // Campaign form state
   const [campaignForm, setCampaignForm] = useState({
     name: '',
@@ -54,21 +56,26 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
     daily_message_limit: 50
   });
 
-  // Fetch campaigns
+  // Fetch campaigns - only for authenticated users
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ['campaigns', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!isAuthenticated) return [];
+      
+      console.log('Fetching campaigns for user:', user.id);
       const { data, error } = await supabase
         .from('campaigns')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching campaigns:', error);
+        throw error;
+      }
       return data || [];
     },
-    enabled: !!user?.id
+    enabled: isAuthenticated
   });
 
   // Calculate real performance metrics
@@ -87,11 +94,14 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
     return { connectionRate, responseRate, meetingRate };
   };
 
-  // Create campaign mutation
+  // Create campaign mutation - only for authenticated users
   const createCampaignMutation = useMutation({
     mutationFn: async (campaignData: typeof campaignForm) => {
-      if (!user?.id) throw new Error('No user ID');
+      if (!isAuthenticated) {
+        throw new Error('Authentication required to create campaigns');
+      }
       
+      console.log('Creating campaign for user:', user.id);
       const { data, error } = await supabase
         .from('campaigns')
         .insert({
@@ -109,7 +119,10 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating campaign:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -130,10 +143,11 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
         daily_message_limit: 50
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Campaign creation error:', error);
       toast({
         title: "Error",
-        description: "Failed to create campaign. Please try again.",
+        description: error.message || "Failed to create campaign. Please try again.",
         variant: "destructive",
       });
     }
@@ -142,6 +156,10 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
   // Update campaign status mutation
   const updateCampaignStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string, status: CampaignStatus }) => {
+      if (!isAuthenticated) {
+        throw new Error('Authentication required');
+      }
+
       const { error } = await supabase
         .from('campaigns')
         .update({ 
@@ -160,6 +178,15 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
   });
 
   const handleCreateCampaign = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to create campaigns.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!campaignForm.name.trim()) {
       toast({
         title: "Validation Error",
@@ -173,6 +200,8 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
   };
 
   const handleStartCampaign = (campaign: any) => {
+    if (!isAuthenticated) return;
+    
     updateCampaignStatusMutation.mutate({ id: campaign.id, status: 'active' as CampaignStatus });
     toast({
       title: "Campaign Started",
@@ -181,6 +210,8 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
   };
 
   const handlePauseCampaign = (campaign: any) => {
+    if (!isAuthenticated) return;
+    
     updateCampaignStatusMutation.mutate({ id: campaign.id, status: 'paused' as CampaignStatus });
     toast({
       title: "Campaign Paused",
@@ -189,6 +220,8 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
   };
 
   const handleStopCampaign = (campaign: any) => {
+    if (!isAuthenticated) return;
+    
     updateCampaignStatusMutation.mutate({ id: campaign.id, status: 'completed' as CampaignStatus });
     toast({
       title: "Campaign Stopped",
@@ -215,6 +248,33 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
       default: return 'Unknown';
     }
   };
+
+  // Show authentication required message for demo users
+  if (!isAuthenticated) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center space-x-2">
+              <Target className="w-7 h-7 text-blue-600" />
+              <span>Campaign Management</span>
+            </h2>
+            <p className="text-slate-600">Create and manage your automated outreach campaigns</p>
+          </div>
+        </div>
+
+        <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Target className="w-12 h-12 text-slate-400 mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 mb-2">Authentication Required</h3>
+            <p className="text-slate-600 text-center mb-4">
+              Please sign in to create and manage your automated outreach campaigns.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -251,6 +311,7 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
             <CardDescription>Set up a new automated outreach campaign</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">Campaign Name</Label>
@@ -359,6 +420,7 @@ export const CampaignManagement = ({ user }: CampaignManagementProps) => {
         </Card>
       )}
 
+      
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="overview">Campaign Overview</TabsTrigger>
