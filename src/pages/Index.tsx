@@ -1,5 +1,5 @@
 
-import { Dashboard } from "@/components/Dashboard";
+import Dashboard from "@/components/Dashboard";
 
 const Index = () => {
   // Mock user object for the dashboard

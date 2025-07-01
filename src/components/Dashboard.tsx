@@ -5,7 +5,7 @@ import { CampaignManagement } from "./CampaignManagement";
 import { ActivityDashboard } from "./ActivityDashboard";
 import { MessageTemplates } from "./MessageTemplates";
 import { Settings } from "./Settings";
-import { UserGuide } from "./UserGuide";
+import UserGuide from "./UserGuide";
 import { ConversationAnalyzerComponent } from "./ConversationAnalyzerComponent";
 import { CalendarIntegration } from "./CalendarIntegration";
 import { BookingAgent } from "./BookingAgent";
@@ -32,7 +32,7 @@ interface DashboardProps {
   user?: any;
 }
 
-const Dashboard = ({ user }: DashboardProps) => {
+export const Dashboard = ({ user }: DashboardProps) => {
   const [activeSection, setActiveSection] = useState("home");
 
   const renderContent = () => {
@@ -48,11 +48,11 @@ const Dashboard = ({ user }: DashboardProps) => {
       case 'templates':
         return <MessageTemplates />;
       case 'analyzer':
-        return <ConversationAnalyzerComponent />;
+        return <ConversationAnalyzerComponent user={user} />;
       case 'calendar':
         return <CalendarIntegration />;
       case 'booking':
-        return <BookingAgent />;
+        return <BookingAgent user={user} />;
       case 'subscription':
         return <SubscriptionCard />;
       case 'usage':
@@ -70,6 +70,7 @@ const Dashboard = ({ user }: DashboardProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      
       <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 h-16 flex items-center justify-between px-6">
         <div className="flex items-center space-x-2">
           <h1 className="text-xl font-semibold text-slate-900">The People's Partner</h1>
@@ -83,6 +84,7 @@ const Dashboard = ({ user }: DashboardProps) => {
       </header>
 
       <div className="flex">
+        
         <aside className="w-64 bg-white/80 backdrop-blur-sm border-r border-slate-200 min-h-screen">
           <nav className="p-4 space-y-2">
             <button
