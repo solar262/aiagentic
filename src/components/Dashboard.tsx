@@ -10,11 +10,11 @@ import {
   MessageSquare, 
   Calendar, 
   Settings, 
-  TrendingUp,
   BookOpen,
   Bell,
   Zap,
-  Target
+  Target,
+  CreditCard
 } from "lucide-react";
 
 import { ActivityDashboard } from "./ActivityDashboard";
@@ -24,6 +24,8 @@ import { CalendarIntegration } from "./CalendarIntegration";
 import { UserGuide } from "./UserGuide";
 import { Settings as SettingsComponent } from "./Settings";
 import { CampaignManagement } from "./CampaignManagement";
+import { UsageDashboard } from "./UsageDashboard";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface DashboardProps {
   user?: any;
@@ -31,6 +33,7 @@ interface DashboardProps {
 
 export const Dashboard = ({ user }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState("overview");
+  const { subscription_tier } = useSubscription();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -44,9 +47,9 @@ export const Dashboard = ({ user }: DashboardProps) => {
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            <Badge variant="secondary" className="flex items-center space-x-1">
+            <Badge variant={subscription_tier === 'free' ? 'secondary' : 'default'} className="flex items-center space-x-1">
               <Zap className="w-3 h-3" />
-              <span>Pro Plan</span>
+              <span>{subscription_tier.charAt(0).toUpperCase() + subscription_tier.slice(1)} Plan</span>
             </Badge>
             <Button variant="outline" size="sm">
               <Bell className="w-4 h-4 mr-2" />
@@ -57,10 +60,14 @@ export const Dashboard = ({ user }: DashboardProps) => {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 bg-white/60 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-8 bg-white/60 backdrop-blur-sm">
             <TabsTrigger value="overview" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="usage" className="flex items-center space-x-2">
+              <CreditCard className="w-4 h-4" />
+              <span className="hidden sm:inline">Usage</span>
             </TabsTrigger>
             <TabsTrigger value="prospects" className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
@@ -91,6 +98,10 @@ export const Dashboard = ({ user }: DashboardProps) => {
           {/* Tab Content */}
           <TabsContent value="overview" className="space-y-6">
             <ActivityDashboard user={user} />
+          </TabsContent>
+
+          <TabsContent value="usage" className="space-y-6">
+            <UsageDashboard user={user} />
           </TabsContent>
 
           <TabsContent value="prospects" className="space-y-6">

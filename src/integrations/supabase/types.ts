@@ -559,6 +559,78 @@ export type Database = {
           },
         ]
       }
+      subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          stripe_customer_id: string | null
+          subscribed: boolean
+          subscription_end: string | null
+          subscription_tier: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      usage_tracking: {
+        Row: {
+          connections_used: number | null
+          created_at: string
+          id: string
+          messages_sent: number | null
+          month_year: string
+          reports_generated: number | null
+          templates_created: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          connections_used?: number | null
+          created_at?: string
+          id?: string
+          messages_sent?: number | null
+          month_year: string
+          reports_generated?: number | null
+          templates_created?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          connections_used?: number | null
+          created_at?: string
+          id?: string
+          messages_sent?: number | null
+          month_year?: string
+          reports_generated?: number | null
+          templates_created?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           auto_follow_up: boolean | null
@@ -619,6 +691,74 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_members: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          joined_at: string | null
+          role: string | null
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          role?: string | null
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          role?: string | null
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          id: string
+          max_members: number | null
+          name: string
+          owner_id: string | null
+          subscription_tier: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_members?: number | null
+          name: string
+          owner_id?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_members?: number | null
+          name?: string
+          owner_id?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -627,6 +767,21 @@ export type Database = {
       calculate_lead_score: {
         Args: { prospect_uuid: string }
         Returns: number
+      }
+      can_user_perform_action: {
+        Args: { user_uuid: string; action_type: string }
+        Returns: boolean
+      }
+      get_user_subscription_limits: {
+        Args: { user_uuid: string }
+        Returns: {
+          tier: string
+          max_connections: number
+          max_templates: number
+          max_team_members: number
+          has_advanced_analytics: boolean
+          has_api_access: boolean
+        }[]
       }
     }
     Enums: {
