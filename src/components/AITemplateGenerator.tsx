@@ -26,46 +26,77 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
   const { toast } = useToast();
   const { max_ai_templates, subscription_tier, createCheckout } = useSubscription();
 
+  // Check if user has a valid UUID (not demo user)
+  const isValidUser = user?.id && user.id !== "demo-user" && user.id.length > 10;
+
   useEffect(() => {
-    if (user?.id) {
+    if (isValidUser) {
       fetchCurrentUsage();
+    } else {
+      // For demo users or invalid users, set usage to 0
+      setCurrentUsage(0);
     }
-  }, [user]);
+  }, [user, isValidUser]);
 
   const fetchCurrentUsage = async () => {
+    if (!isValidUser) {
+      setCurrentUsage(0);
+      return;
+    }
+
     try {
       const currentMonth = new Date().toISOString().slice(0, 7);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('usage_tracking')
         .select('ai_templates_generated')
         .eq('user_id', user.id)
         .eq('month_year', currentMonth)
         .single();
       
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 means no rows found, which is fine
+        console.error('Error fetching AI usage:', error);
+        setCurrentUsage(0);
+        return;
+      }
+      
       setCurrentUsage(data?.ai_templates_generated || 0);
     } catch (error) {
       console.error('Error fetching AI usage:', error);
+      setCurrentUsage(0);
     }
   };
 
   const canGenerateTemplate = async () => {
-    if (!user?.id) return false;
+    if (!isValidUser) {
+      // For demo users, allow generation but don't save to database
+      return currentUsage < max_ai_templates;
+    }
     
     try {
       const { data, error } = await supabase.rpc('can_generate_ai_template', {
         user_uuid: user.id
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error checking generation limits:', error);
+        // Fallback to client-side check
+        return currentUsage < max_ai_templates;
+      }
       return data;
     } catch (error) {
       console.error('Error checking generation limits:', error);
-      return false;
+      // Fallback to client-side check
+      return currentUsage < max_ai_templates;
     }
   };
 
   const incrementUsage = async () => {
-    if (!user?.id) return;
+    if (!isValidUser) {
+      // For demo users, just increment locally
+      setCurrentUsage(prev => prev + 1);
+      return;
+    }
     
     try {
       await supabase.rpc('increment_ai_template_usage', {
@@ -76,6 +107,8 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
       setCurrentUsage(prev => prev + 1);
     } catch (error) {
       console.error('Error incrementing usage:', error);
+      // Still increment locally for better UX
+      setCurrentUsage(prev => prev + 1);
     }
   };
 
@@ -107,26 +140,31 @@ export const AITemplateGenerator = ({ user, onTemplateCreated }: AITemplateGener
 
       const { templateName, subject, content } = response.data;
       
-      // Save the generated template
-      const { error } = await supabase
-        .from('message_templates')
-        .insert({
-          user_id: user.id,
-          name: templateName,
-          type: preset.type as any,
-          subject: subject || null,
-          content: content,
-          variables: extractVariables(content),
-        });
+      // Save the generated template (only for valid users)
+      if (isValidUser) {
+        const { error } = await supabase
+          .from('message_templates')
+          .insert({
+            user_id: user.id,
+            name: templateName,
+            type: preset.type as any,
+            subject: subject || null,
+            content: content,
+            variables: extractVariables(content),
+          });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      // Increment usage counter
-      await incrementUsage();
+        // Increment usage counter
+        await incrementUsage();
+      } else {
+        // For demo users, just increment locally
+        setCurrentUsage(prev => prev + 1);
+      }
 
       toast({
         title: "Smart Template Created!",
-        description: `Generated "${templateName}" and added to your library.`,
+        description: `Generated "${templateName}"${isValidUser ? ' and added to your library' : ' (demo mode)'}.`,
       });
 
       if (onTemplateCreated) {
