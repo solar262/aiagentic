@@ -1,0 +1,200 @@
+
+/* LinkedIn Assistant Extension Styles */
+
+#tpp-floating-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10000;
+  cursor: pointer;
+}
+
+.tpp-fab {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+}
+
+.tpp-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+#tpp-panel {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  width: 350px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  z-index: 10001;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.tpp-panel-content {
+  padding: 20px;
+}
+
+.tpp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tpp-header h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 18px;
+}
+
+#tpp-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+#tpp-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.tpp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tpp-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.tpp-btn.primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.tpp-btn.primary:hover {
+  background: #2563eb;
+}
+
+.tpp-btn.secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.tpp-btn.secondary:hover {
+  background: #e5e7eb;
+}
+
+#tpp-results {
+  min-height: 100px;
+}
+
+.tpp-analysis {
+  background: #f9fafb;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.tpp-analysis h4 {
+  margin: 0 0 12px 0;
+  color: #111827;
+}
+
+.analysis-item {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.score {
+  color: #059669;
+  font-weight: bold;
+}
+
+.tpp-message {
+  background: #fef7ff;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e879f9;
+}
+
+.tpp-message h4 {
+  margin: 0 0 12px 0;
+  color: #111827;
+}
+
+.message-content {
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  white-space: pre-line;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.tpp-success {
+  background: #dcfce7;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+}
+
+.tpp-success h4 {
+  margin: 0 0 8px 0;
+  color: #166534;
+}
+
+.tpp-success p {
+  margin: 0;
+  color: #166534;
+  font-size: 14px;
+}
+
+/* Animations */
+#tpp-panel {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}

@@ -1,134 +1,228 @@
-
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { 
-  BarChart3, 
-  Users, 
-  MessageSquare, 
-  Calendar, 
-  Settings, 
-  BookOpen,
-  Bell,
-  Zap,
-  Target,
-  CreditCard
-} from "lucide-react";
-
-import { ActivityDashboard } from "./ActivityDashboard";
-import { LeadPipeline } from "./LeadPipeline";
-import { MessageTemplates } from "./MessageTemplates";
-import { CalendarIntegration } from "./CalendarIntegration";
-import UserGuide from "./UserGuide";
-import { Settings as SettingsComponent } from "./Settings";
+import { useState } from "react";
+import { LinkedInConnector } from "./LinkedInConnector";
+import { ProspectDiscovery } from "./ProspectDiscovery";
 import { CampaignManagement } from "./CampaignManagement";
+import { ActivityDashboard } from "./ActivityDashboard";
+import { MessageTemplates } from "./MessageTemplates";
+import { Settings } from "./Settings";
+import { UserGuide } from "./UserGuide";
+import { ConversationAnalyzerComponent } from "./ConversationAnalyzerComponent";
+import { CalendarIntegration } from "./CalendarIntegration";
+import { BookingAgent } from "./BookingAgent";
+import { SubscriptionCard } from "./SubscriptionCard";
 import { UsageDashboard } from "./UsageDashboard";
-import { useSubscription } from "@/hooks/useSubscription";
+import { ExtensionAuth } from "./ExtensionAuth";
+import { 
+  Users, 
+  Search, 
+  Target, 
+  BarChart3, 
+  MessageSquare, 
+  Settings2, 
+  HelpCircle, 
+  MessageCircle,
+  Calendar,
+  Bot,
+  CreditCard,
+  Activity,
+  Chrome
+} from "lucide-react";
 
 interface DashboardProps {
   user?: any;
 }
 
-export const Dashboard = ({ user }: DashboardProps) => {
-  const [activeTab, setActiveTab] = useState("overview");
-  const { subscription_tier } = useSubscription();
+const Dashboard = ({ user }: DashboardProps) => {
+  const [activeSection, setActiveSection] = useState("home");
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'home':
+        return <ActivityDashboard user={user} />;
+      case 'linkedin':
+        return <LinkedInConnector isConnected={true} onConnectionChange={() => {}} />;
+      case 'prospect':
+        return <ProspectDiscovery user={user} />;
+      case 'campaign':
+        return <CampaignManagement user={user} />;
+      case 'templates':
+        return <MessageTemplates />;
+      case 'analyzer':
+        return <ConversationAnalyzerComponent />;
+      case 'calendar':
+        return <CalendarIntegration />;
+      case 'booking':
+        return <BookingAgent />;
+      case 'subscription':
+        return <SubscriptionCard />;
+      case 'usage':
+        return <UsageDashboard />;
+      case 'settings':
+        return <Settings />;
+      case 'guide':
+        return <UserGuide />;
+      case 'extension':
+        return <ExtensionAuth user={user} />;
+      default:
+        return <ActivityDashboard user={user} />;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">LinkedIn AI Assistant</h1>
-            <p className="text-slate-600 mt-1">
-              Welcome back, {user?.user_metadata?.full_name || 'User'}! Let's grow your network today.
-            </p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Badge variant={subscription_tier === 'free' ? 'secondary' : 'default'} className="flex items-center space-x-1">
-              <Zap className="w-3 h-3" />
-              <span>{subscription_tier.charAt(0).toUpperCase() + subscription_tier.slice(1)} Plan</span>
-            </Badge>
-            <Button variant="outline" size="sm">
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 h-16 flex items-center justify-between px-6">
+        <div className="flex items-center space-x-2">
+          <h1 className="text-xl font-semibold text-slate-900">The People's Partner</h1>
         </div>
+        <div className="flex items-center space-x-4">
+          <span className="text-slate-600">
+            {user?.user_metadata?.full_name || user?.email || 'Demo User'}
+          </span>
+          {/* Add user avatar or profile dropdown here */}
+        </div>
+      </header>
 
-        {/* Navigation Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-8 bg-white/60 backdrop-blur-sm">
-            <TabsTrigger value="overview" className="flex items-center space-x-2">
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="usage" className="flex items-center space-x-2">
-              <CreditCard className="w-4 h-4" />
-              <span className="hidden sm:inline">Usage</span>
-            </TabsTrigger>
-            <TabsTrigger value="prospects" className="flex items-center space-x-2">
+      <div className="flex">
+        <aside className="w-64 bg-white/80 backdrop-blur-sm border-r border-slate-200 min-h-screen">
+          <nav className="p-4 space-y-2">
+            <button
+              onClick={() => setActiveSection('home')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'home' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              <span>Activity</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSection('linkedin')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'linkedin' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
               <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Prospects</span>
-            </TabsTrigger>
-            <TabsTrigger value="campaigns" className="flex items-center space-x-2">
+              <span>LinkedIn Connector</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSection('prospect')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'prospect' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Search className="w-4 h-4" />
+              <span>Prospect Discovery</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSection('campaign')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'campaign' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
               <Target className="w-4 h-4" />
-              <span className="hidden sm:inline">Campaigns</span>
-            </TabsTrigger>
-            <TabsTrigger value="templates" className="flex items-center space-x-2">
+              <span>Campaign Management</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSection('templates')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'templates' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
               <MessageSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">Templates</span>
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex items-center space-x-2">
+              <span>Message Templates</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSection('analyzer')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'analyzer' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>Conversation Analyzer</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSection('calendar')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'calendar' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
               <Calendar className="w-4 h-4" />
-              <span className="hidden sm:inline">Calendar</span>
-            </TabsTrigger>
-            <TabsTrigger value="guide" className="flex items-center space-x-2">
-              <BookOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">Guide</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2">
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
-            </TabsTrigger>
-          </TabsList>
+              <span>Calendar Integration</span>
+            </button>
 
-          {/* Tab Content */}
-          <TabsContent value="overview" className="space-y-6">
-            <ActivityDashboard user={user} />
-          </TabsContent>
+            <button
+              onClick={() => setActiveSection('booking')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'booking' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Bot className="w-4 h-4" />
+              <span>AI Booking Agent</span>
+            </button>
 
-          <TabsContent value="usage" className="space-y-6">
-            <UsageDashboard user={user} />
-          </TabsContent>
+            <button
+              onClick={() => setActiveSection('subscription')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'subscription' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <CreditCard className="w-4 h-4" />
+              <span>Subscription</span>
+            </button>
 
-          <TabsContent value="prospects" className="space-y-6">
-            <LeadPipeline user={user} />
-          </TabsContent>
+            <button
+              onClick={() => setActiveSection('usage')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'usage' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>Usage Dashboard</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveSection('extension')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'extension' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Chrome className="w-4 h-4" />
+              <span>Chrome Extension</span>
+            </button>
 
-          <TabsContent value="campaigns" className="space-y-6">
-            <CampaignManagement user={user} />
-          </TabsContent>
+            <button
+              onClick={() => setActiveSection('settings')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'settings' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Settings2 className="w-4 h-4" />
+              <span>Settings</span>
+            </button>
 
-          <TabsContent value="templates" className="space-y-6">
-            <MessageTemplates user={user} />
-          </TabsContent>
+            <button
+              onClick={() => setActiveSection('guide')}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                activeSection === 'guide' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span>User Guide</span>
+            </button>
+          </nav>
+        </aside>
 
-          <TabsContent value="calendar" className="space-y-6">
-            <CalendarIntegration user={user} />
-          </TabsContent>
-
-          <TabsContent value="guide" className="space-y-6">
-            <UserGuide />
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <SettingsComponent user={user} />
-          </TabsContent>
-        </Tabs>
+        <main className="flex-1 p-6">
+          {renderContent()}
+        </main>
       </div>
     </div>
   );
 };
+
+export default Dashboard;
