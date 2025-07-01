@@ -12,7 +12,6 @@ import { CalendarIntegration } from "./CalendarIntegration";
 import { BookingAgent } from "./BookingAgent";
 import { SubscriptionCard } from "./SubscriptionCard";
 import { UsageDashboard } from "./UsageDashboard";
-import { ExtensionAuth } from "./ExtensionAuth";
 import { 
   Users, 
   Search, 
@@ -25,8 +24,7 @@ import {
   Calendar,
   Bot,
   CreditCard,
-  Activity,
-  Chrome
+  Activity
 } from "lucide-react";
 
 interface DashboardProps {
@@ -62,8 +60,6 @@ export const Dashboard = ({ user }: DashboardProps) => {
         return <Settings />;
       case 'guide':
         return <UserGuide />;
-      case 'extension':
-        return <ExtensionAuth user={user} />;
       default:
         return <ActivityDashboard user={user} />;
     }
@@ -186,16 +182,6 @@ export const Dashboard = ({ user }: DashboardProps) => {
             >
               <BarChart3 className="w-4 h-4" />
               <span>Usage Dashboard</span>
-            </button>
-            
-            <button
-              onClick={() => setActiveSection('extension')}
-              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
-                activeSection === 'extension' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              <Chrome className="w-4 h-4" />
-              <span>Chrome Extension</span>
             </button>
 
             <button
