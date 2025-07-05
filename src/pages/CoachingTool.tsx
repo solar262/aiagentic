@@ -1,11 +1,59 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Users, Calendar, Mail, Phone, MessageSquare, BarChart3, Target, Zap } from "lucide-react";
+import { CorporateCompanyManagement } from "@/components/CorporateCompanyManagement";
+import { EmailCampaignManagement } from "@/components/EmailCampaignManagement";
+import { CoachingBookingSystem } from "@/components/CoachingBookingSystem";
+import { CoachingAnalytics } from "@/components/CoachingAnalytics";
 
 const CoachingTool = () => {
+  const [activeSection, setActiveSection] = useState('dashboard');
+
+  const mockUser = { id: "demo-user", email: "demo@coaching.com" };
+
+  if (activeSection === 'companies') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <div className="max-w-7xl mx-auto">
+          <CorporateCompanyManagement user={mockUser} />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeSection === 'campaigns') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <div className="max-w-7xl mx-auto">
+          <EmailCampaignManagement user={mockUser} />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeSection === 'bookings') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <div className="max-w-7xl mx-auto">
+          <CoachingBookingSystem user={mockUser} />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeSection === 'analytics') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <div className="max-w-7xl mx-auto">
+          <CoachingAnalytics user={mockUser} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -47,7 +95,7 @@ const CoachingTool = () => {
                   <span className="text-sm text-gray-600">Active Prospects</span>
                   <Badge variant="outline">0</Badge>
                 </div>
-                <Button className="w-full mt-4">
+                <Button className="w-full mt-4" onClick={() => setActiveSection('companies')}>
                   <Building2 className="w-4 h-4 mr-2" />
                   Manage Companies
                 </Button>
@@ -191,19 +239,19 @@ const CoachingTool = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Button size="lg" className="h-16">
+          <Button size="lg" className="h-16" onClick={() => setActiveSection('companies')}>
             <Building2 className="w-5 h-5 mr-2" />
             Add Companies
           </Button>
-          <Button size="lg" variant="outline" className="h-16">
+          <Button size="lg" variant="outline" className="h-16" onClick={() => setActiveSection('campaigns')}>
             <Mail className="w-5 h-5 mr-2" />
             Create Campaign
           </Button>
-          <Button size="lg" variant="outline" className="h-16">
+          <Button size="lg" variant="outline" className="h-16" onClick={() => setActiveSection('bookings')}>
             <Calendar className="w-5 h-5 mr-2" />
             View Bookings
           </Button>
-          <Button size="lg" variant="outline" className="h-16">
+          <Button size="lg" variant="outline" className="h-16" onClick={() => setActiveSection('analytics')}>
             <BarChart3 className="w-5 h-5 mr-2" />
             Analytics
           </Button>
