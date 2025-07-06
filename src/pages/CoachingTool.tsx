@@ -12,12 +12,19 @@ import { CoachingAnalytics } from "@/components/CoachingAnalytics";
 const CoachingTool = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
 
-  const mockUser = { id: "demo-user", email: "demo@coaching.com" };
+  const mockUser = { id: "demo-user-" + Math.random().toString(36), email: "demo@coaching.com" };
 
   if (activeSection === 'companies') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
         <div className="max-w-7xl mx-auto">
+          <Button 
+            variant="outline" 
+            onClick={() => setActiveSection('dashboard')} 
+            className="mb-4"
+          >
+            ← Back to Dashboard
+          </Button>
           <CorporateCompanyManagement user={mockUser} />
         </div>
       </div>
@@ -28,6 +35,13 @@ const CoachingTool = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
         <div className="max-w-7xl mx-auto">
+          <Button 
+            variant="outline" 
+            onClick={() => setActiveSection('dashboard')} 
+            className="mb-4"
+          >
+            ← Back to Dashboard
+          </Button>
           <EmailCampaignManagement user={mockUser} />
         </div>
       </div>
@@ -38,6 +52,13 @@ const CoachingTool = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
         <div className="max-w-7xl mx-auto">
+          <Button 
+            variant="outline" 
+            onClick={() => setActiveSection('dashboard')} 
+            className="mb-4"
+          >
+            ← Back to Dashboard
+          </Button>
           <CoachingBookingSystem user={mockUser} />
         </div>
       </div>
@@ -48,6 +69,13 @@ const CoachingTool = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
         <div className="max-w-7xl mx-auto">
+          <Button 
+            variant="outline" 
+            onClick={() => setActiveSection('dashboard')} 
+            className="mb-4"
+          >
+            ← Back to Dashboard
+          </Button>
           <CoachingAnalytics user={mockUser} />
         </div>
       </div>
@@ -124,7 +152,7 @@ const CoachingTool = () => {
                   <span className="text-sm text-gray-600">Response Rate</span>
                   <Badge variant="outline">0%</Badge>
                 </div>
-                <Button className="w-full mt-4">
+                <Button className="w-full mt-4" onClick={() => setActiveSection('campaigns')}>
                   <Zap className="w-4 h-4 mr-2" />
                   Create Campaign
                 </Button>
@@ -153,7 +181,7 @@ const CoachingTool = () => {
                   <span className="text-sm text-gray-600">Conversion Rate</span>
                   <Badge variant="outline">0%</Badge>
                 </div>
-                <Button className="w-full mt-4">
+                <Button className="w-full mt-4" onClick={() => setActiveSection('bookings')}>
                   <Calendar className="w-4 h-4 mr-2" />
                   View Calendar
                 </Button>

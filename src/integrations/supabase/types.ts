@@ -206,65 +206,56 @@ export type Database = {
         Row: {
           booked_count: number | null
           connected_count: number | null
-          created_at: string
+          created_at: string | null
           daily_connection_limit: number | null
           daily_message_limit: number | null
           description: string | null
-          end_date: string | null
           id: string
           name: string
           replied_count: number | null
-          start_date: string | null
-          status: Database["public"]["Enums"]["campaign_status"]
+          status: string | null
           target_company_size_max: number | null
           target_company_size_min: number | null
           target_industry: string | null
           target_title: string[] | null
           total_prospects: number | null
-          updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           booked_count?: number | null
           connected_count?: number | null
-          created_at?: string
+          created_at?: string | null
           daily_connection_limit?: number | null
           daily_message_limit?: number | null
           description?: string | null
-          end_date?: string | null
           id?: string
           name: string
           replied_count?: number | null
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["campaign_status"]
+          status?: string | null
           target_company_size_max?: number | null
           target_company_size_min?: number | null
           target_industry?: string | null
           target_title?: string[] | null
           total_prospects?: number | null
-          updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           booked_count?: number | null
           connected_count?: number | null
-          created_at?: string
+          created_at?: string | null
           daily_connection_limit?: number | null
           daily_message_limit?: number | null
           description?: string | null
-          end_date?: string | null
           id?: string
           name?: string
           replied_count?: number | null
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["campaign_status"]
+          status?: string | null
           target_company_size_max?: number | null
           target_company_size_min?: number | null
           target_industry?: string | null
           target_title?: string[] | null
           total_prospects?: number | null
-          updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -415,13 +406,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "interactions_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "interactions_prospect_id_fkey"
             columns: ["prospect_id"]
             isOneToOne: false
@@ -436,6 +420,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      leads: {
+        Row: {
+          campaign_id: string | null
+          company: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       message_templates: {
         Row: {
